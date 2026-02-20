@@ -1,3 +1,5 @@
+UPDATE THIS FILE AS NEEDED
+
 # Stagehand MCP Server
 
 This application is a Model Context Protocol (MCP) Server that exposes local browser automation capabilities. It utilizes **Stagehand v3** (`@browserbasehq/stagehand`) under the hood to drive a local Chromium browser instance.
@@ -62,3 +64,7 @@ Example configuration:
   }
 }
 ```
+
+### Reference Docs
+
+- Stagehand -- https://github.com/browserbase/stagehand
