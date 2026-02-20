@@ -9,19 +9,36 @@ var __commonJS = (cb, mod) => function __require() {
 // src/stagehand.ts
 import { Stagehand } from "@browserbasehq/stagehand";
 async function getStagehand() {
-  if (!stagehand) {
-    stagehand = new Stagehand({
-      env: "LOCAL"
-    });
-    await stagehand.init();
+  if (stagehand) {
+    return stagehand;
   }
-  return stagehand;
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+  initializationPromise = (async () => {
+    try {
+      const instance = new Stagehand({
+        env: "LOCAL",
+        localBrowserLaunchOptions: {
+          headless: true
+        }
+      });
+      await instance.init();
+      stagehand = instance;
+      return instance;
+    } catch (error) {
+      initializationPromise = null;
+      throw error;
+    }
+  })();
+  return initializationPromise;
 }
-var stagehand;
+var stagehand, initializationPromise;
 var init_stagehand = __esm({
   "src/stagehand.ts"() {
     "use strict";
     stagehand = null;
+    initializationPromise = null;
   }
 });
 
@@ -82,8 +99,8 @@ var init_server = __esm({
     "use strict";
     init_navigate();
     server = new McpServer({
-      name: "stagehand-server",
-      version: "1.0.0"
+      name: "stagehand",
+      version: "0.0.1"
     });
     registerNavigateTool(server);
   }

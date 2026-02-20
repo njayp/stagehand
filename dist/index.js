@@ -12,14 +12,31 @@ var import_zod = require("zod");
 // src/stagehand.ts
 var import_stagehand = require("@browserbasehq/stagehand");
 var stagehand = null;
+var initializationPromise = null;
 async function getStagehand() {
-  if (!stagehand) {
-    stagehand = new import_stagehand.Stagehand({
-      env: "LOCAL"
-    });
-    await stagehand.init();
+  if (stagehand) {
+    return stagehand;
   }
-  return stagehand;
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+  initializationPromise = (async () => {
+    try {
+      const instance = new import_stagehand.Stagehand({
+        env: "LOCAL",
+        localBrowserLaunchOptions: {
+          headless: true
+        }
+      });
+      await instance.init();
+      stagehand = instance;
+      return instance;
+    } catch (error) {
+      initializationPromise = null;
+      throw error;
+    }
+  })();
+  return initializationPromise;
 }
 
 // src/tools/navigate.ts
@@ -66,8 +83,8 @@ function registerNavigateTool(server2) {
 
 // src/server.ts
 var server = new import_mcp.McpServer({
-  name: "stagehand-server",
-  version: "1.0.0"
+  name: "stagehand",
+  version: "0.0.1"
 });
 registerNavigateTool(server);
 
