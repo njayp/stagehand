@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerNavigateTool } from "./tools/navigate.js";
+import { registerExtractTool } from "./tools/extract.js";
 
 export const server = new McpServer({
   name: "stagehand",
@@ -7,3 +8,4 @@ export const server = new McpServer({
 });
 
 registerNavigateTool(server);
+registerExtractTool(server);

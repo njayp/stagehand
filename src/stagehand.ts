@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
 
 let stagehand: Stagehand | null = null;
@@ -21,6 +22,10 @@ export async function getStagehand(): Promise<Stagehand> {
         env: "LOCAL",
         localBrowserLaunchOptions: {
           headless: true,
+        },
+        model: {
+          modelName: "anthropic/claude-sonnet-4-5-20250929",
+          apiKey: process.env.ANTHROPIC_API_KEY,
         },
       });
 
