@@ -2,10 +2,8 @@ import { z } from "zod";
 import { getStagehand } from "../stagehand";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-function jsonSchemaToZod(
-  schema: Record<string, string>,
-): z.ZodObject<z.ZodRawShape> {
-  const shape: z.ZodRawShape = {};
+function jsonSchemaToZod(schema: Record<string, string>): z.ZodObject<any> {
+  const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const [key, typeStr] of Object.entries(schema)) {
     switch (typeStr) {

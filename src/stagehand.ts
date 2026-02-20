@@ -24,7 +24,7 @@ export async function getStagehand(): Promise<Stagehand> {
           headless: true,
         },
         model: {
-          modelName: "anthropic/claude-sonnet-4-5-20250929",
+          modelName: "anthropic/claude-sonnet-4-5",
           apiKey: process.env.ANTHROPIC_API_KEY,
         },
       });

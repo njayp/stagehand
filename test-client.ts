@@ -87,6 +87,48 @@ async function main() {
     JSON.stringify(extractSchemaResult, null, 2),
   );
 
+  // Test observe tool - without instruction
+  console.log("\nCalling observe tool (no instruction)...");
+  const observeResult = await client.callTool({
+    name: "observe",
+    arguments: {},
+  });
+  console.log(
+    "Observe Result (no instruction):",
+    JSON.stringify(observeResult, null, 2),
+  );
+
+  // Test observe tool - with instruction
+  console.log("\nCalling observe tool (with instruction)...");
+  const observeFilteredResult = await client.callTool({
+    name: "observe",
+    arguments: {
+      instruction: "Find all links on the page",
+    },
+  });
+  console.log(
+    "Observe Result (with instruction):",
+    JSON.stringify(observeFilteredResult, null, 2),
+  );
+
+  // Test act tool
+  console.log("\nCalling act tool...");
+  const actResult = await client.callTool({
+    name: "act",
+    arguments: {
+      instruction: "Click the 'More information...' link",
+    },
+  });
+  console.log("Act Result:", JSON.stringify(actResult, null, 2));
+
+  // Test get_url tool - should show the URL after the act navigation
+  console.log("\nCalling get_url tool...");
+  const getUrlResult = await client.callTool({
+    name: "get_url",
+    arguments: {},
+  });
+  console.log("Get URL Result:", JSON.stringify(getUrlResult, null, 2));
+
   process.exit(0);
 }
 

@@ -24,7 +24,7 @@ async function getStagehand() {
           headless: true
         },
         model: {
-          modelName: "anthropic/claude-sonnet-4-5-20250929",
+          modelName: "anthropic/claude-sonnet-4-5",
           apiKey: process.env.ANTHROPIC_API_KEY
         }
       });
@@ -339,6 +339,148 @@ var init_extract = __esm({
   }
 });
 
+// src/tools/observe.ts
+import { z as z3 } from "zod";
+function registerObserveTool(server2) {
+  server2.registerTool(
+    "observe",
+    {
+      description: "List available actions and interactive elements on the current page. Optionally provide an instruction to filter or focus the observation. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {
+        instruction: z3.string().optional().describe(
+          'Optional natural language description to filter or focus observation (e.g. "Find all login-related buttons")'
+        )
+      }
+    },
+    async ({ instruction }) => {
+      try {
+        const sh = await getStagehand();
+        let actions;
+        if (instruction) {
+          actions = await sh.observe(instruction);
+        } else {
+          actions = await sh.observe();
+        }
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(actions, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error observing page: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+var init_observe = __esm({
+  "src/tools/observe.ts"() {
+    "use strict";
+    init_stagehand();
+  }
+});
+
+// src/tools/act.ts
+import { z as z4 } from "zod";
+function registerActTool(server2) {
+  server2.registerTool(
+    "act",
+    {
+      description: "Perform an action on the current page using a natural language instruction. Examples: click a button, fill in a form field, select a dropdown option. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {
+        instruction: z4.string().describe(
+          'Natural language description of the action to perform (e.g. "Click the Sign In button", "Type hello into the search box")'
+        )
+      }
+    },
+    async ({ instruction }) => {
+      try {
+        const sh = await getStagehand();
+        const result = await sh.act(instruction);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error performing action: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+var init_act = __esm({
+  "src/tools/act.ts"() {
+    "use strict";
+    init_stagehand();
+  }
+});
+
+// src/tools/get_url.ts
+function registerGetUrlTool(server2) {
+  server2.registerTool(
+    "get_url",
+    {
+      description: "Get the current URL of the active browser page. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {}
+    },
+    async () => {
+      try {
+        const sh = await getStagehand();
+        const page = sh.context.activePage();
+        if (!page) {
+          throw new Error("No active page found in Stagehand context");
+        }
+        const url = page.url();
+        return {
+          content: [
+            {
+              type: "text",
+              text: url
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error getting URL: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+var init_get_url = __esm({
+  "src/tools/get_url.ts"() {
+    "use strict";
+    init_stagehand();
+  }
+});
+
 // src/server.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 var server;
@@ -347,12 +489,18 @@ var init_server = __esm({
     "use strict";
     init_navigate();
     init_extract();
+    init_observe();
+    init_act();
+    init_get_url();
     server = new McpServer({
       name: "stagehand",
       version: "0.0.1"
     });
     registerNavigateTool(server);
     registerExtractTool(server);
+    registerObserveTool(server);
+    registerActTool(server);
+    registerGetUrlTool(server);
   }
 });
 

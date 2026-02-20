@@ -51,7 +51,7 @@ async function getStagehand() {
           headless: true
         },
         model: {
-          modelName: "anthropic/claude-sonnet-4-5-20250929",
+          modelName: "anthropic/claude-sonnet-4-5",
           apiKey: process.env.ANTHROPIC_API_KEY
         }
       });
@@ -338,6 +338,130 @@ function registerExtractTool(server2) {
   );
 }
 
+// src/tools/observe.ts
+var import_zod3 = require("zod");
+function registerObserveTool(server2) {
+  server2.registerTool(
+    "observe",
+    {
+      description: "List available actions and interactive elements on the current page. Optionally provide an instruction to filter or focus the observation. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {
+        instruction: import_zod3.z.string().optional().describe(
+          'Optional natural language description to filter or focus observation (e.g. "Find all login-related buttons")'
+        )
+      }
+    },
+    async ({ instruction }) => {
+      try {
+        const sh = await getStagehand();
+        let actions;
+        if (instruction) {
+          actions = await sh.observe(instruction);
+        } else {
+          actions = await sh.observe();
+        }
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(actions, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error observing page: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+
+// src/tools/act.ts
+var import_zod4 = require("zod");
+function registerActTool(server2) {
+  server2.registerTool(
+    "act",
+    {
+      description: "Perform an action on the current page using a natural language instruction. Examples: click a button, fill in a form field, select a dropdown option. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {
+        instruction: import_zod4.z.string().describe(
+          'Natural language description of the action to perform (e.g. "Click the Sign In button", "Type hello into the search box")'
+        )
+      }
+    },
+    async ({ instruction }) => {
+      try {
+        const sh = await getStagehand();
+        const result = await sh.act(instruction);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error performing action: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+
+// src/tools/get_url.ts
+function registerGetUrlTool(server2) {
+  server2.registerTool(
+    "get_url",
+    {
+      description: "Get the current URL of the active browser page. A page must already be loaded (use the navigate tool first).",
+      inputSchema: {}
+    },
+    async () => {
+      try {
+        const sh = await getStagehand();
+        const page = sh.context.activePage();
+        if (!page) {
+          throw new Error("No active page found in Stagehand context");
+        }
+        const url = page.url();
+        return {
+          content: [
+            {
+              type: "text",
+              text: url
+            }
+          ]
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error getting URL: ${String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+  );
+}
+
 // src/server.ts
 var server = new import_mcp.McpServer({
   name: "stagehand",
@@ -345,6 +469,9 @@ var server = new import_mcp.McpServer({
 });
 registerNavigateTool(server);
 registerExtractTool(server);
+registerObserveTool(server);
+registerActTool(server);
+registerGetUrlTool(server);
 
 // index.ts
 async function main() {

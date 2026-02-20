@@ -22,6 +22,21 @@ The server implements the following MCP tools:
   - **Outputs**: Extracted data as JSON text. Without a schema, returns `{ "extraction": "..." }`. With a schema, returns a JSON object matching the requested structure.
   - **Prerequisites**: A page must already be loaded using the `navigate` tool. Requires an LLM API key (e.g. `ANTHROPIC_API_KEY`) to be set in the environment.
 
+- **`observe`**: Lists available actions and interactive elements on the current page.
+  - **Inputs**: `instruction` (string, optional) - Natural language description to filter or focus the observation.
+  - **Outputs**: JSON array of actions, each containing `selector`, `description`, and optionally `method` and `arguments`.
+  - **Prerequisites**: A page must already be loaded using the `navigate` tool. Requires an LLM API key (e.g. `ANTHROPIC_API_KEY`) to be set in the environment.
+
+- **`act`**: Performs an action on the current page using natural language.
+  - **Inputs**: `instruction` (string, required) - Natural language description of the action to perform (e.g. "Click the Sign In button").
+  - **Outputs**: JSON object with action result details.
+  - **Prerequisites**: A page must already be loaded using the `navigate` tool. Requires an LLM API key (e.g. `ANTHROPIC_API_KEY`) to be set in the environment.
+
+- **`get_url`**: Gets the current URL of the active browser page.
+  - **Inputs**: None.
+  - **Outputs**: The current page URL as a text string.
+  - **Prerequisites**: A page must already be loaded using the `navigate` tool.
+
 ## Technical Stack
 
 - **Server Protocol**: [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) - specifically utilizing the modern `McpServer` class.
