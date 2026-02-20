@@ -16,31 +16,26 @@ export async function getStagehand(): Promise<Stagehand> {
   }
 
   // Start initialization (only first call reaches here)
-  initializationPromise = (async () => {
-    try {
-      const instance = new Stagehand({
-        env: "LOCAL",
-        localBrowserLaunchOptions: {
-          headless: true,
-        },
-        model: {
-          modelName: "anthropic/claude-sonnet-4-5",
-          apiKey: process.env.ANTHROPIC_API_KEY,
-        },
-      });
-
-      await instance.init();
-
-      // Only set stagehand after successful initialization
-      stagehand = instance;
-
-      return instance;
-    } catch (error) {
-      // Clear promise on error to allow retry
-      initializationPromise = null;
-      throw error;
-    }
-  })();
-
+  initializationPromise = initStagehand();
   return initializationPromise;
 }
+
+const initStagehand = async (): Promise<Stagehand> => {
+  const instance = new Stagehand({
+    env: "LOCAL",
+    localBrowserLaunchOptions: {
+      headless: true,
+    },
+    model: {
+      modelName: "anthropic/claude-sonnet-4-5",
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    },
+  });
+
+  await instance.init();
+
+  // Only set stagehand after successful initialization
+  stagehand = instance;
+
+  return instance;
+};
