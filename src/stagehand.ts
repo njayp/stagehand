@@ -27,7 +27,7 @@ const initStagehand = async (): Promise<Stagehand> => {
       headless: true,
     },
     model: {
-      modelName: "anthropic/claude-sonnet-4-5",
+      modelName: "anthropic/claude-haiku-4-5",
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
   });
