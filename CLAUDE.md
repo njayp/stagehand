@@ -10,9 +10,9 @@ Docs: https://github.com/browserbase/stagehand
 
 The server implements the following MCP tools:
 
-- **`navigate`**: Navigates the active browser page to a specified URL, records the navigation as video, and returns the page's `<title>`.
+- **`navigate`**: Navigates the active browser page to a specified URL, records the navigation as video, and returns the page's `<title>` along with performance metrics.
   - **Inputs**: `url` (string, required) - The URL to navigate to (e.g. `https://google.com`).
-  - **Outputs**: Navigation success message with page title and path to the recorded video.
+  - **Outputs**: Navigation success message with page title, path to the recorded video, and performance metrics (wall clock duration, TTFB, DOM Interactive, DOM Content Loaded, Load Event End, Total Load Time, DOM Parsing Time).
   - **Recording**: Each navigation is automatically recorded using Chrome DevTools Protocol screencast and saved as an MP4 video in `.stagehand/logs/navigate-<timestamp>.mp4`.
 
 - **`extract`**: Extracts data from the currently loaded page using natural language instructions.
@@ -62,7 +62,7 @@ The server implements the following MCP tools:
    ```bash
    npm test
    ```
-   This runs unit tests (`src/stagehand.test.ts`) and integration tests (`src/test-client.test.ts`) which connect to the built MCP server and exercise all tools.
+   This runs unit tests (`src/stagehand.test.ts`) and integration tests (`src/server.test.ts`) which connect to the built MCP server and exercise all tools.
 
 ## Video Recordings
 

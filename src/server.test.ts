@@ -47,6 +47,10 @@ describe("MCP tools integration", () => {
     const videoPath = match![1];
     const stat = await fs.stat(videoPath);
     expect(stat.size).toBeGreaterThan(0);
+
+    // Verify performance metrics
+    expect(text).toContain("Performance Metrics:");
+    expect(text).toContain("Navigation Duration (wall clock):");
   });
 
   it("extract with instruction only", async () => {

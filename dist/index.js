@@ -173,6 +173,53 @@ var ScreenRecorder = class {
 // src/tools/navigate.ts
 var import_promises2 = __toESM(require("fs/promises"));
 var import_path2 = __toESM(require("path"));
+async function collectPerformanceMetrics(page, wallClockMs) {
+  try {
+    const timing = await page.evaluate(() => {
+      const entries = performance.getEntriesByType(
+        "navigation"
+      );
+      if (!entries.length) return null;
+      const nav = entries[0];
+      return {
+        ttfb: nav.responseStart > 0 ? Math.round(nav.responseStart) : null,
+        domInteractive: nav.domInteractive > 0 ? Math.round(nav.domInteractive) : null,
+        domContentLoaded: nav.domContentLoadedEventEnd > 0 ? Math.round(nav.domContentLoadedEventEnd) : null,
+        loadEventEnd: nav.loadEventEnd > 0 ? Math.round(nav.loadEventEnd) : null,
+        totalLoadTime: nav.loadEventEnd > 0 ? Math.round(nav.loadEventEnd) : null,
+        domParsing: nav.domInteractive > 0 && nav.responseEnd > 0 ? Math.round(nav.domInteractive - nav.responseEnd) : null
+      };
+    });
+    return {
+      wallClockMs,
+      ttfbMs: timing?.ttfb ?? null,
+      domInteractiveMs: timing?.domInteractive ?? null,
+      domContentLoadedMs: timing?.domContentLoaded ?? null,
+      loadEventEndMs: timing?.loadEventEnd ?? null,
+      totalLoadTimeMs: timing?.totalLoadTime ?? null,
+      domParsingMs: timing?.domParsing ?? null
+    };
+  } catch {
+    return null;
+  }
+}
+function formatMetrics(metrics) {
+  const lines = ["\n\nPerformance Metrics:"];
+  lines.push(`  Navigation Duration (wall clock): ${metrics.wallClockMs}ms`);
+  if (metrics.ttfbMs !== null)
+    lines.push(`  TTFB (Time to First Byte): ${metrics.ttfbMs}ms`);
+  if (metrics.domInteractiveMs !== null)
+    lines.push(`  DOM Interactive: ${metrics.domInteractiveMs}ms`);
+  if (metrics.domContentLoadedMs !== null)
+    lines.push(`  DOM Content Loaded: ${metrics.domContentLoadedMs}ms`);
+  if (metrics.loadEventEndMs !== null)
+    lines.push(`  Load Event End: ${metrics.loadEventEndMs}ms`);
+  if (metrics.totalLoadTimeMs !== null)
+    lines.push(`  Total Load Time: ${metrics.totalLoadTimeMs}ms`);
+  if (metrics.domParsingMs !== null)
+    lines.push(`  DOM Parsing Time: ${metrics.domParsingMs}ms`);
+  return lines.join("\n");
+}
 function registerNavigateTool(server2) {
   server2.registerTool(
     "navigate",
@@ -201,9 +248,13 @@ function registerNavigateTool(server2) {
         } catch (recorderError) {
         }
         try {
+          const navStart = Date.now();
           await page.goto(url, { waitUntil: "domcontentloaded" });
+          const wallClockMs = Date.now() - navStart;
           const title = await page.title();
           await new Promise((resolve) => setTimeout(resolve, 2e3));
+          const metrics = await collectPerformanceMetrics(page, wallClockMs);
+          const metricsText = metrics ? formatMetrics(metrics) : "";
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
@@ -211,7 +262,7 @@ function registerNavigateTool(server2) {
                 content: [
                   {
                     type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${videoPath}`
+                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${videoPath}${metricsText}`
                   }
                 ]
               };
@@ -220,7 +271,7 @@ function registerNavigateTool(server2) {
                 content: [
                   {
                     type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Warning: Recording failed: ${String(stopError)}`
+                    text: `Successfully navigated to ${url}. Page title is "${title}". Warning: Recording failed: ${String(stopError)}${metricsText}`
                   }
                 ]
               };
@@ -230,7 +281,7 @@ function registerNavigateTool(server2) {
               content: [
                 {
                   type: "text",
-                  text: `Successfully navigated to ${url}. Page title is "${title}". (Recording was disabled due to initialization error)`
+                  text: `Successfully navigated to ${url}. Page title is "${title}". (Recording was disabled due to initialization error)${metricsText}`
                 }
               ]
             };
