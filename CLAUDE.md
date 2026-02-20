@@ -57,22 +57,12 @@ The server implements the following MCP tools:
    ```bash
    npm run build
    ```
-3. **Run the testing script**:
-   We have included an integrated programmatic test suite file `test-client.ts`. It will connect to the built MCP server using `StdioClientTransport`, issue a `tools/list` request, and subsequently invoke the `navigate` tool for `https://example.com`.
+3. **Run the tests**:
+   All tests use vitest. Run the full suite with:
    ```bash
-   npx tsx test-client.ts
+   npm test
    ```
-   If successful, you will see output like:
-   ```json
-   Navigation Result: {
-     "content": [
-       {
-         "type": "text",
-         "text": "Successfully navigated to https://example.com. Page title is \"Example Domain\". Recording saved to .stagehand/logs/navigate-2026-02-20T05-39-42-403Z.mp4"
-       }
-     ]
-   }
-   ```
+   This runs unit tests (`src/stagehand.test.ts`) and integration tests (`src/test-client.test.ts`) which connect to the built MCP server and exercise all tools.
 
 ## Video Recordings
 

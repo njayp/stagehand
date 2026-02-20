@@ -44,28 +44,24 @@ async function getStagehand() {
   if (initializationPromise) {
     return initializationPromise;
   }
-  initializationPromise = (async () => {
-    try {
-      const instance = new import_stagehand.Stagehand({
-        env: "LOCAL",
-        localBrowserLaunchOptions: {
-          headless: true
-        },
-        model: {
-          modelName: "anthropic/claude-sonnet-4-5",
-          apiKey: process.env.ANTHROPIC_API_KEY
-        }
-      });
-      await instance.init();
-      stagehand = instance;
-      return instance;
-    } catch (error) {
-      initializationPromise = null;
-      throw error;
-    }
-  })();
+  initializationPromise = initStagehand();
   return initializationPromise;
 }
+var initStagehand = async () => {
+  const instance = new import_stagehand.Stagehand({
+    env: "LOCAL",
+    localBrowserLaunchOptions: {
+      headless: true
+    },
+    model: {
+      modelName: "anthropic/claude-haiku-4-5",
+      apiKey: process.env.ANTHROPIC_API_KEY
+    }
+  });
+  await instance.init();
+  stagehand = instance;
+  return instance;
+};
 
 // src/utils/recorder.ts
 var import_fluent_ffmpeg = __toESM(require("fluent-ffmpeg"));

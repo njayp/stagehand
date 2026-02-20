@@ -17,34 +17,30 @@ async function getStagehand() {
   if (initializationPromise) {
     return initializationPromise;
   }
-  initializationPromise = (async () => {
-    try {
+  initializationPromise = initStagehand();
+  return initializationPromise;
+}
+var stagehand, initializationPromise, initStagehand;
+var init_stagehand = __esm({
+  "src/stagehand.ts"() {
+    "use strict";
+    stagehand = null;
+    initializationPromise = null;
+    initStagehand = async () => {
       const instance = new Stagehand({
         env: "LOCAL",
         localBrowserLaunchOptions: {
           headless: true
         },
         model: {
-          modelName: "anthropic/claude-sonnet-4-5",
+          modelName: "anthropic/claude-haiku-4-5",
           apiKey: process.env.ANTHROPIC_API_KEY
         }
       });
       await instance.init();
       stagehand = instance;
       return instance;
-    } catch (error) {
-      initializationPromise = null;
-      throw error;
-    }
-  })();
-  return initializationPromise;
-}
-var stagehand, initializationPromise;
-var init_stagehand = __esm({
-  "src/stagehand.ts"() {
-    "use strict";
-    stagehand = null;
-    initializationPromise = null;
+    };
   }
 });
 
