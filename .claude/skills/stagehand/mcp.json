@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "stagehand": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["github:njayp/stagehand"]
+    }
+  }
+}
