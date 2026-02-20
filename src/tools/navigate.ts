@@ -30,7 +30,7 @@ export function registerNavigateTool(server: McpServer) {
 
         // Generate timestamped filename
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const videoPath = path.join(logsDir, `navigate-${timestamp}.mp4`);
+        const videoPath = path.join(logsDir, `${timestamp}-navigate.mp4`);
 
         // Start recording
         const recorder = new ScreenRecorder(page, sh);

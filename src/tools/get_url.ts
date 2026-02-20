@@ -1,5 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getStagehand } from "../stagehand";
+import { ScreenRecorder } from "../utils/recorder.js";
+import fs from "fs/promises";
+import path from "path";
 
 export function registerGetUrlTool(server: McpServer) {
   server.registerTool(
@@ -18,16 +21,49 @@ export function registerGetUrlTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const url = page.url();
+        const logsDir = path.join(process.cwd(), ".stagehand", "logs");
+        await fs.mkdir(logsDir, { recursive: true });
 
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: url,
-            },
-          ],
-        };
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const videoPath = path.join(logsDir, `${timestamp}-get_url.mp4`);
+
+        const recorder = new ScreenRecorder(page, sh);
+        let recordingStarted = false;
+
+        try {
+          await recorder.start();
+          recordingStarted = true;
+        } catch (recorderError) {}
+
+        try {
+          const url = page.url();
+
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          let extraInfo = "";
+          if (recordingStarted) {
+            try {
+              await recorder.stop(videoPath);
+              extraInfo = `\nRecording saved to ${videoPath}`;
+            } catch (stopError) {
+              extraInfo = `\nWarning: Recording failed: ${String(stopError)}`;
+            }
+          }
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: url + extraInfo,
+              },
+            ],
+          };
+        } catch (actionError) {
+          if (recordingStarted) {
+            await recorder.stop(videoPath).catch(() => {});
+          }
+          throw actionError;
+        }
       } catch (error) {
         return {
           content: [
