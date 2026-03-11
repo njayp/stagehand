@@ -44,6 +44,19 @@ var init_stagehand = __esm({
   }
 });
 
+// src/utils/log.ts
+function logVideoSaved(server2, toolName, videoPath) {
+  server2.server.sendLoggingMessage({
+    level: "info",
+    data: `[${toolName}] Completed. Video saved to: ${videoPath}`
+  });
+}
+var init_log = __esm({
+  "src/utils/log.ts"() {
+    "use strict";
+  }
+});
+
 // src/utils/recorder.ts
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
@@ -246,6 +259,7 @@ function registerNavigateTool(server2) {
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
+              logVideoSaved(server2, "navigate", videoPath);
               return {
                 content: [
                   {
@@ -299,6 +313,7 @@ var init_navigate = __esm({
   "src/tools/navigate.ts"() {
     "use strict";
     init_stagehand();
+    init_log();
     init_recorder();
   }
 });
@@ -383,6 +398,7 @@ function registerExtractTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "extract", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -421,6 +437,7 @@ var init_extract = __esm({
   "src/tools/extract.ts"() {
     "use strict";
     init_stagehand();
+    init_log();
     init_recorder();
   }
 });
@@ -472,6 +489,7 @@ function registerObserveTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "observe", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -510,6 +528,7 @@ var init_observe = __esm({
   "src/tools/observe.ts"() {
     "use strict";
     init_stagehand();
+    init_log();
     init_recorder();
   }
 });
@@ -556,6 +575,7 @@ function registerActTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "act", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -594,6 +614,7 @@ var init_act = __esm({
   "src/tools/act.ts"() {
     "use strict";
     init_stagehand();
+    init_log();
     init_recorder();
   }
 });
@@ -635,6 +656,7 @@ function registerGetUrlTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "get_url", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -672,6 +694,7 @@ Warning: Recording failed: ${String(stopError)}`;
 var init_get_url = __esm({
   "src/tools/get_url.ts"() {
     "use strict";
+    init_log();
     init_stagehand();
     init_recorder();
   }

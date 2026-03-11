@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { logVideoSaved } from "../utils/log.js";
 import { getStagehand } from "../stagehand";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
@@ -45,6 +46,7 @@ export function registerGetUrlTool(server: McpServer) {
             try {
               await recorder.stop(videoPath);
               extraInfo = `\nRecording saved to ${videoPath}`;
+              logVideoSaved(server, "get_url", videoPath);
             } catch (stopError) {
               extraInfo = `\nWarning: Recording failed: ${String(stopError)}`;
             }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStagehand } from "../stagehand.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { logVideoSaved } from "../utils/log.js";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
 import path from "path";
@@ -53,6 +54,7 @@ export function registerActTool(server: McpServer) {
             try {
               await recorder.stop(videoPath);
               extraInfo = `\nRecording saved to ${videoPath}`;
+              logVideoSaved(server, "act", videoPath);
             } catch (stopError) {
               extraInfo = `\nWarning: Recording failed: ${String(stopError)}`;
             }

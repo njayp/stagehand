@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Page } from "@browserbasehq/stagehand";
 import { getStagehand } from "../stagehand";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { logVideoSaved } from "../utils/log.js";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
 import path from "path";
@@ -134,6 +135,7 @@ export function registerNavigateTool(server: McpServer) {
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
+              logVideoSaved(server, "navigate", videoPath);
               return {
                 content: [
                   {

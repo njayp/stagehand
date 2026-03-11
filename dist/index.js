@@ -63,6 +63,14 @@ var initStagehand = async () => {
   return instance;
 };
 
+// src/utils/log.ts
+function logVideoSaved(server2, toolName, videoPath) {
+  server2.server.sendLoggingMessage({
+    level: "info",
+    data: `[${toolName}] Completed. Video saved to: ${videoPath}`
+  });
+}
+
 // src/utils/recorder.ts
 var import_fluent_ffmpeg = __toESM(require("fluent-ffmpeg"));
 var import_ffmpeg_static = __toESM(require("ffmpeg-static"));
@@ -258,6 +266,7 @@ function registerNavigateTool(server2) {
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
+              logVideoSaved(server2, "navigate", videoPath);
               return {
                 content: [
                   {
@@ -388,6 +397,7 @@ function registerExtractTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "extract", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -470,6 +480,7 @@ function registerObserveTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "observe", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -547,6 +558,7 @@ function registerActTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "act", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
@@ -619,6 +631,7 @@ function registerGetUrlTool(server2) {
               await recorder.stop(videoPath);
               extraInfo = `
 Recording saved to ${videoPath}`;
+              logVideoSaved(server2, "get_url", videoPath);
             } catch (stopError) {
               extraInfo = `
 Warning: Recording failed: ${String(stopError)}`;
