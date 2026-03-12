@@ -668,10 +668,10 @@ Warning: Recording failed: ${String(stopError)}`;
 }
 
 // src/server.ts
-var server = new import_mcp.McpServer({
-  name: "stagehand",
-  version: "0.0.1"
-});
+var server = new import_mcp.McpServer(
+  { name: "stagehand", version: "0.0.1" },
+  { capabilities: { logging: {} } }
+);
 registerNavigateTool(server);
 registerExtractTool(server);
 registerObserveTool(server);

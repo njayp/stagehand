@@ -711,10 +711,10 @@ var init_server = __esm({
     init_observe();
     init_act();
     init_get_url();
-    server = new McpServer({
-      name: "stagehand",
-      version: "0.0.1"
-    });
+    server = new McpServer(
+      { name: "stagehand", version: "0.0.1" },
+      { capabilities: { logging: {} } }
+    );
     registerNavigateTool(server);
     registerExtractTool(server);
     registerObserveTool(server);
