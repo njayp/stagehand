@@ -75,11 +75,13 @@ export class ScreenRecorder {
   }
 
   async stop(outputPath: string): Promise<void> {
+    console.error(`[recorder] stop() called, frames captured: ${this.frames.length}, outputPath: ${outputPath}`);
 
     try {
       // Stop CDP screencast
       await this.page.sendCDP("Page.stopScreencast");
     } catch (error) {
+      console.error(`[recorder] Page.stopScreencast error:`, error);
     }
 
     // Unregister event handler from the page's session
@@ -94,8 +96,10 @@ export class ScreenRecorder {
       throw new Error("No frames captured during recording");
     }
 
+    console.error(`[recorder] encoding ${this.frames.length} frames to ${outputPath}`);
     // Encode frames to MP4
     await this.encodeToMp4(this.frames, outputPath);
+    console.error(`[recorder] encoding complete: ${outputPath}`);
   }
 
   private async encodeToMp4(

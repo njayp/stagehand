@@ -137,12 +137,21 @@ export function registerNavigateTool(server: McpServer) {
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
-              logVideoSaved(server, "navigate", videoPath);
+              const absVideoPath = path.resolve(videoPath);
+              console.error(`[navigate] video written to absolute path: ${absVideoPath}`);
+              // Verify the file actually exists
+              try {
+                const stat = await fs.stat(absVideoPath);
+                console.error(`[navigate] video file verified, size: ${stat.size} bytes`);
+              } catch (statErr) {
+                console.error(`[navigate] WARNING: video file NOT found after save: ${statErr}`);
+              }
+              logVideoSaved(server, "navigate", absVideoPath);
               return {
                 content: [
                   {
                     type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${videoPath}${metricsText}`,
+                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${absVideoPath}${metricsText}`,
                   },
                 ],
               };

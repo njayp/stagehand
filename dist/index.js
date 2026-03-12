@@ -118,9 +118,11 @@ var ScreenRecorder = class {
     });
   }
   async stop(outputPath) {
+    console.error(`[recorder] stop() called, frames captured: ${this.frames.length}, outputPath: ${outputPath}`);
     try {
       await this.page.sendCDP("Page.stopScreencast");
     } catch (error) {
+      console.error(`[recorder] Page.stopScreencast error:`, error);
     }
     if (this.frameHandler && this.session) {
       this.session.off("Page.screencastFrame", this.frameHandler);
@@ -130,7 +132,9 @@ var ScreenRecorder = class {
     if (this.frames.length === 0) {
       throw new Error("No frames captured during recording");
     }
+    console.error(`[recorder] encoding ${this.frames.length} frames to ${outputPath}`);
     await this.encodeToMp4(this.frames, outputPath);
+    console.error(`[recorder] encoding complete: ${outputPath}`);
   }
   async encodeToMp4(frames, outputPath) {
     const tempDir = import_path.default.join(
@@ -277,12 +281,20 @@ function registerNavigateTool(server2) {
           if (recordingStarted) {
             try {
               await recorder.stop(videoPath);
-              logVideoSaved(server2, "navigate", videoPath);
+              const absVideoPath = import_path3.default.resolve(videoPath);
+              console.error(`[navigate] video written to absolute path: ${absVideoPath}`);
+              try {
+                const stat = await import_promises2.default.stat(absVideoPath);
+                console.error(`[navigate] video file verified, size: ${stat.size} bytes`);
+              } catch (statErr) {
+                console.error(`[navigate] WARNING: video file NOT found after save: ${statErr}`);
+              }
+              logVideoSaved(server2, "navigate", absVideoPath);
               return {
                 content: [
                   {
                     type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${videoPath}${metricsText}`
+                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${absVideoPath}${metricsText}`
                   }
                 ]
               };
