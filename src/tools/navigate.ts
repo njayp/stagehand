@@ -101,12 +101,17 @@ export function registerNavigateTool(server: McpServer) {
 
         // Prepare recording directory
         const logsDir = getLogsDir();
-        console.error(`[navigate] logsDir resolved to: ${logsDir}`);
-        await fs.mkdir(logsDir, { recursive: true });
+        const resolvedLogsDir = path.resolve(logsDir);
+        console.error(`[navigate] logsDir=${logsDir} resolved=${resolvedLogsDir} cwd=${process.cwd()}`);
+        await fs.mkdir(resolvedLogsDir, { recursive: true });
+        // Write a marker file to prove the directory is writable
+        const markerPath = path.join(resolvedLogsDir, "marker.txt");
+        await fs.writeFile(markerPath, `written at ${new Date().toISOString()} from cwd=${process.cwd()}`);
+        console.error(`[navigate] marker written to ${markerPath}`);
 
         // Generate timestamped filename
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const videoPath = path.join(logsDir, `${timestamp}-navigate.mp4`);
+        const videoPath = path.join(resolvedLogsDir, `${timestamp}-navigate.mp4`);
 
         // Start recording
         const recorder = new ScreenRecorder(page, sh);

@@ -254,10 +254,14 @@ function registerNavigateTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
-        console.error(`[navigate] logsDir resolved to: ${logsDir}`);
-        await fs2.mkdir(logsDir, { recursive: true });
+        const resolvedLogsDir = path3.resolve(logsDir);
+        console.error(`[navigate] logsDir=${logsDir} resolved=${resolvedLogsDir} cwd=${process.cwd()}`);
+        await fs2.mkdir(resolvedLogsDir, { recursive: true });
+        const markerPath = path3.join(resolvedLogsDir, "marker.txt");
+        await fs2.writeFile(markerPath, `written at ${(/* @__PURE__ */ new Date()).toISOString()} from cwd=${process.cwd()}`);
+        console.error(`[navigate] marker written to ${markerPath}`);
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path3.join(logsDir, `${timestamp}-navigate.mp4`);
+        const videoPath = path3.join(resolvedLogsDir, `${timestamp}-navigate.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
