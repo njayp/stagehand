@@ -5,6 +5,7 @@ import { logVideoSaved } from "../utils/log.js";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
 import path from "path";
+import { getLogsDir } from "../utils/paths.js";
 
 function jsonSchemaToZod(schema: Record<string, string>): z.ZodObject<any> {
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -71,7 +72,7 @@ export function registerExtractTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const logsDir = path.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs.mkdir(logsDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

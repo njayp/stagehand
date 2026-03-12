@@ -170,10 +170,22 @@ var init_recorder = __esm({
   }
 });
 
+// src/utils/paths.ts
+import path2 from "path";
+function getLogsDir() {
+  const base = process.env.STAGEHAND_LOGS_DIR || path2.join(process.cwd(), ".stagehand", "logs");
+  return base;
+}
+var init_paths = __esm({
+  "src/utils/paths.ts"() {
+    "use strict";
+  }
+});
+
 // src/tools/navigate.ts
 import { z } from "zod";
 import fs2 from "fs/promises";
-import path2 from "path";
+import path3 from "path";
 async function collectPerformanceMetrics(page, wallClockMs) {
   try {
     const timing = await page.evaluate(() => {
@@ -237,10 +249,10 @@ function registerNavigateTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = path2.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs2.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path2.join(logsDir, `${timestamp}-navigate.mp4`);
+        const videoPath = path3.join(logsDir, `${timestamp}-navigate.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
@@ -315,13 +327,14 @@ var init_navigate = __esm({
     init_stagehand();
     init_log();
     init_recorder();
+    init_paths();
   }
 });
 
 // src/tools/extract.ts
 import { z as z2 } from "zod";
 import fs3 from "fs/promises";
-import path3 from "path";
+import path4 from "path";
 function jsonSchemaToZod(schema) {
   const shape = {};
   for (const [key, typeStr] of Object.entries(schema)) {
@@ -372,10 +385,10 @@ function registerExtractTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = path3.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs3.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path3.join(logsDir, `${timestamp}-extract.mp4`);
+        const videoPath = path4.join(logsDir, `${timestamp}-extract.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
@@ -439,13 +452,14 @@ var init_extract = __esm({
     init_stagehand();
     init_log();
     init_recorder();
+    init_paths();
   }
 });
 
 // src/tools/observe.ts
 import { z as z3 } from "zod";
 import fs4 from "fs/promises";
-import path4 from "path";
+import path5 from "path";
 function registerObserveTool(server2) {
   server2.registerTool(
     "observe",
@@ -464,10 +478,10 @@ function registerObserveTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = path4.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs4.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path4.join(logsDir, `${timestamp}-observe.mp4`);
+        const videoPath = path5.join(logsDir, `${timestamp}-observe.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
@@ -530,13 +544,14 @@ var init_observe = __esm({
     init_stagehand();
     init_log();
     init_recorder();
+    init_paths();
   }
 });
 
 // src/tools/act.ts
 import { z as z4 } from "zod";
 import fs5 from "fs/promises";
-import path5 from "path";
+import path6 from "path";
 function registerActTool(server2) {
   server2.registerTool(
     "act",
@@ -555,10 +570,10 @@ function registerActTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = path5.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs5.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path5.join(logsDir, `${timestamp}-act.mp4`);
+        const videoPath = path6.join(logsDir, `${timestamp}-act.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
@@ -616,12 +631,13 @@ var init_act = __esm({
     init_stagehand();
     init_log();
     init_recorder();
+    init_paths();
   }
 });
 
 // src/tools/get_url.ts
 import fs6 from "fs/promises";
-import path6 from "path";
+import path7 from "path";
 function registerGetUrlTool(server2) {
   server2.registerTool(
     "get_url",
@@ -636,10 +652,10 @@ function registerGetUrlTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = path6.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs6.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path6.join(logsDir, `${timestamp}-get_url.mp4`);
+        const videoPath = path7.join(logsDir, `${timestamp}-get_url.mp4`);
         const recorder = new ScreenRecorder(page, sh);
         let recordingStarted = false;
         try {
@@ -697,6 +713,7 @@ var init_get_url = __esm({
     init_log();
     init_stagehand();
     init_recorder();
+    init_paths();
   }
 });
 

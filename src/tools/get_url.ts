@@ -4,6 +4,7 @@ import { getStagehand } from "../stagehand";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
 import path from "path";
+import { getLogsDir } from "../utils/paths.js";
 
 export function registerGetUrlTool(server: McpServer) {
   server.registerTool(
@@ -22,7 +23,7 @@ export function registerGetUrlTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const logsDir = path.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs.mkdir(logsDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

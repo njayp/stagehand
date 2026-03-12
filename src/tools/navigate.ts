@@ -6,6 +6,7 @@ import { logVideoSaved } from "../utils/log.js";
 import { ScreenRecorder } from "../utils/recorder.js";
 import fs from "fs/promises";
 import path from "path";
+import { getLogsDir } from "../utils/paths.js";
 
 interface PerformanceMetrics {
   wallClockMs: number;
@@ -99,7 +100,7 @@ export function registerNavigateTool(server: McpServer) {
         }
 
         // Prepare recording directory
-        const logsDir = path.join(process.cwd(), ".stagehand", "logs");
+        const logsDir = getLogsDir();
         await fs.mkdir(logsDir, { recursive: true });
 
         // Generate timestamped filename
