@@ -34,6 +34,7 @@ export function registerObserveTool(server: McpServer) {
         }
 
         const logsDir = getLogsDir();
+        console.error(`[observe] logsDir resolved to: ${logsDir}`);
         await fs.mkdir(logsDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -45,7 +46,9 @@ export function registerObserveTool(server: McpServer) {
         try {
           await recorder.start();
           recordingStarted = true;
-        } catch (recorderError) {}
+        } catch (recorderError) {
+          console.error(`[observe] recorder.start() failed:`, recorderError);
+        }
 
         try {
           let actions;

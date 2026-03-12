@@ -33,6 +33,7 @@ export function registerActTool(server: McpServer) {
         }
 
         const logsDir = getLogsDir();
+        console.error(`[act] logsDir resolved to: ${logsDir}`);
         await fs.mkdir(logsDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -44,7 +45,9 @@ export function registerActTool(server: McpServer) {
         try {
           await recorder.start();
           recordingStarted = true;
-        } catch (recorderError) {}
+        } catch (recorderError) {
+          console.error(`[act] recorder.start() failed:`, recorderError);
+        }
 
         try {
           const result = await sh.act(instruction);

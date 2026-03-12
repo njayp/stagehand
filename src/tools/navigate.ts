@@ -101,6 +101,7 @@ export function registerNavigateTool(server: McpServer) {
 
         // Prepare recording directory
         const logsDir = getLogsDir();
+        console.error(`[navigate] logsDir resolved to: ${logsDir}`);
         await fs.mkdir(logsDir, { recursive: true });
 
         // Generate timestamped filename
@@ -115,7 +116,7 @@ export function registerNavigateTool(server: McpServer) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
-          // Continue navigation even if recording fails
+          console.error(`[navigate] recorder.start() failed:`, recorderError);
         }
 
         try {

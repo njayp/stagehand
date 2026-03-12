@@ -254,6 +254,7 @@ function registerNavigateTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
+        console.error(`[navigate] logsDir resolved to: ${logsDir}`);
         await import_promises2.default.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const videoPath = import_path3.default.join(logsDir, `${timestamp}-navigate.mp4`);
@@ -263,6 +264,7 @@ function registerNavigateTool(server2) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
+          console.error(`[navigate] recorder.start() failed:`, recorderError);
         }
         try {
           const navStart = Date.now();
@@ -381,6 +383,7 @@ function registerExtractTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
+        console.error(`[extract] logsDir resolved to: ${logsDir}`);
         await import_promises3.default.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const videoPath = import_path4.default.join(logsDir, `${timestamp}-extract.mp4`);
@@ -390,6 +393,7 @@ function registerExtractTool(server2) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
+          console.error(`[extract] recorder.start() failed:`, recorderError);
         }
         try {
           let result;
@@ -465,6 +469,7 @@ function registerObserveTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
+        console.error(`[observe] logsDir resolved to: ${logsDir}`);
         await import_promises4.default.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const videoPath = import_path5.default.join(logsDir, `${timestamp}-observe.mp4`);
@@ -474,6 +479,7 @@ function registerObserveTool(server2) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
+          console.error(`[observe] recorder.start() failed:`, recorderError);
         }
         try {
           let actions;
@@ -548,6 +554,7 @@ function registerActTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
+        console.error(`[act] logsDir resolved to: ${logsDir}`);
         await import_promises5.default.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const videoPath = import_path6.default.join(logsDir, `${timestamp}-act.mp4`);
@@ -557,6 +564,7 @@ function registerActTool(server2) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
+          console.error(`[act] recorder.start() failed:`, recorderError);
         }
         try {
           const result = await sh.act(instruction);
@@ -621,6 +629,7 @@ function registerGetUrlTool(server2) {
           throw new Error("No active page found in Stagehand context");
         }
         const logsDir = getLogsDir();
+        console.error(`[get_url] logsDir resolved to: ${logsDir}`);
         await import_promises6.default.mkdir(logsDir, { recursive: true });
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const videoPath = import_path7.default.join(logsDir, `${timestamp}-get_url.mp4`);
@@ -630,6 +639,7 @@ function registerGetUrlTool(server2) {
           await recorder.start();
           recordingStarted = true;
         } catch (recorderError) {
+          console.error(`[get_url] recorder.start() failed:`, recorderError);
         }
         try {
           const url = page.url();
@@ -692,6 +702,7 @@ async function main() {
   const transport = new import_stdio.StdioServerTransport();
   await server.connect(transport);
   console.error("Stagehand MCP server running on stdio");
+  console.error(`[stagehand] process.cwd() = ${process.cwd()}`);
 }
 main().catch((error) => {
   console.error("Server error:", error);

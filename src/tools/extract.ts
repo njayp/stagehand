@@ -73,6 +73,7 @@ export function registerExtractTool(server: McpServer) {
         }
 
         const logsDir = getLogsDir();
+        console.error(`[extract] logsDir resolved to: ${logsDir}`);
         await fs.mkdir(logsDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -84,7 +85,9 @@ export function registerExtractTool(server: McpServer) {
         try {
           await recorder.start();
           recordingStarted = true;
-        } catch (recorderError) {}
+        } catch (recorderError) {
+          console.error(`[extract] recorder.start() failed:`, recorderError);
+        }
 
         try {
           let result: unknown;
