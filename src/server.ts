@@ -5,10 +5,7 @@ import { registerObserveTool } from "./tools/observe.js";
 import { registerActTool } from "./tools/act.js";
 import { registerGetUrlTool } from "./tools/get_url.js";
 
-export const server = new McpServer(
-  { name: "stagehand", version: "0.0.1" },
-  { capabilities: { logging: {} } },
-);
+export const server = new McpServer({ name: "stagehand", version: "0.0.1" });
 
 registerNavigateTool(server);
 registerExtractTool(server);

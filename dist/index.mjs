@@ -44,152 +44,8 @@ var init_stagehand = __esm({
   }
 });
 
-// src/utils/log.ts
-function logVideoSaved(server2, toolName, videoPath) {
-  server2.server.sendLoggingMessage({
-    level: "info",
-    data: `[${toolName}] Completed. Video saved to: ${videoPath}`
-  });
-}
-var init_log = __esm({
-  "src/utils/log.ts"() {
-    "use strict";
-  }
-});
-
-// src/utils/recorder.ts
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
-import fs from "fs/promises";
-import path from "path";
-import os from "os";
-var ScreenRecorder;
-var init_recorder = __esm({
-  "src/utils/recorder.ts"() {
-    "use strict";
-    if (ffmpegStatic) {
-      ffmpeg.setFfmpegPath(ffmpegStatic);
-    }
-    ScreenRecorder = class {
-      constructor(page, stagehand2) {
-        this.page = page;
-        this.stagehand = stagehand2;
-      }
-      frames = [];
-      frameHandler = null;
-      session = null;
-      // Will store the CDP session for event unregistration
-      MAX_FRAMES = 1e3;
-      recordingStartTime = 0;
-      async start() {
-        this.frames = [];
-        this.recordingStartTime = Date.now();
-        await this.page.sendCDP("Page.enable");
-        const mainFrame = this.page.mainFrame();
-        this.session = mainFrame.session;
-        this.frameHandler = (params) => {
-          if (this.frames.length < this.MAX_FRAMES) {
-            this.frames.push({
-              data: params.data,
-              sessionId: params.sessionId,
-              timestamp: Date.now() - this.recordingStartTime
-            });
-          }
-          this.page.sendCDP("Page.screencastFrameAck", { sessionId: params.sessionId }).catch((err) => {
-          });
-        };
-        this.session.on("Page.screencastFrame", this.frameHandler);
-        await this.page.sendCDP("Page.startScreencast", {
-          format: "jpeg",
-          quality: 80,
-          maxWidth: 1280,
-          maxHeight: 720,
-          everyNthFrame: 1
-        });
-      }
-      async stop(outputPath) {
-        console.error(`[recorder] stop() called, frames captured: ${this.frames.length}, outputPath: ${outputPath}`);
-        try {
-          await this.page.sendCDP("Page.stopScreencast");
-        } catch (error) {
-          console.error(`[recorder] Page.stopScreencast error:`, error);
-        }
-        if (this.frameHandler && this.session) {
-          this.session.off("Page.screencastFrame", this.frameHandler);
-          this.frameHandler = null;
-          this.session = null;
-        }
-        if (this.frames.length === 0) {
-          throw new Error("No frames captured during recording");
-        }
-        console.error(`[recorder] encoding ${this.frames.length} frames to ${outputPath}`);
-        await this.encodeToMp4(this.frames, outputPath);
-        console.error(`[recorder] encoding complete: ${outputPath}`);
-      }
-      async encodeToMp4(frames, outputPath) {
-        const tempDir = path.join(
-          os.tmpdir(),
-          `stagehand-frames-${Date.now()}-${Math.random().toString(36).substring(7)}`
-        );
-        await fs.mkdir(tempDir, { recursive: true });
-        try {
-          for (let i = 0; i < frames.length; i++) {
-            const framePath = path.join(
-              tempDir,
-              `frame-${i.toString().padStart(5, "0")}.jpg`
-            );
-            const buffer = Buffer.from(frames[i].data, "base64");
-            await fs.writeFile(framePath, buffer);
-          }
-          const totalDuration = frames[frames.length - 1].timestamp / 1e3;
-          const fps = Math.max(1, Math.min(30, frames.length / totalDuration));
-          await new Promise((resolve, reject) => {
-            const command = ffmpeg().input(path.join(tempDir, "frame-%05d.jpg")).inputFPS(fps).videoFilters([
-              "scale=trunc(iw/2)*2:trunc(ih/2)*2"
-              // Ensure even dimensions for H.264
-            ]).outputOptions([
-              "-c:v libx264",
-              // H.264 codec
-              "-pix_fmt yuv420p",
-              // Pixel format for compatibility
-              "-movflags +faststart"
-              // Enable fast start for web playback
-            ]).output(outputPath).on("start", (cmdLine) => {
-            }).on("stderr", (stderrLine) => {
-            }).on("end", () => {
-              resolve();
-            }).on("error", (err, stdout, stderr) => {
-              reject(new Error(`FFmpeg encoding failed: ${err.message}`));
-            });
-            command.run();
-          });
-        } finally {
-          try {
-            await fs.rm(tempDir, { recursive: true, force: true });
-          } catch (cleanupError) {
-          }
-        }
-      }
-    };
-  }
-});
-
-// src/utils/paths.ts
-import path2 from "path";
-function getLogsDir() {
-  const base = process.env.STAGEHAND_LOGS_DIR || path2.join(process.cwd(), ".stagehand", "logs");
-  return base;
-}
-var init_paths = __esm({
-  "src/utils/paths.ts"() {
-    "use strict";
-  }
-});
-
 // src/tools/navigate.ts
 import { z } from "zod";
-import fs2 from "fs/promises";
-import path3 from "path";
 async function collectPerformanceMetrics(page, wallClockMs) {
   try {
     const timing = await page.evaluate(() => {
@@ -253,78 +109,20 @@ function registerNavigateTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = getLogsDir();
-        const resolvedLogsDir = path3.resolve(logsDir);
-        console.error(`[navigate] logsDir=${logsDir} resolved=${resolvedLogsDir} cwd=${process.cwd()}`);
-        await fs2.mkdir(resolvedLogsDir, { recursive: true });
-        const markerPath = path3.join(resolvedLogsDir, "marker.txt");
-        await fs2.writeFile(markerPath, `written at ${(/* @__PURE__ */ new Date()).toISOString()} from cwd=${process.cwd()}`);
-        console.error(`[navigate] marker written to ${markerPath}`);
-        const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path3.join(resolvedLogsDir, `${timestamp}-navigate.mp4`);
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[navigate] recorder.start() failed:`, recorderError);
-        }
-        try {
-          const navStart = Date.now();
-          await page.goto(url, { waitUntil: "domcontentloaded" });
-          const wallClockMs = Date.now() - navStart;
-          const title = await page.title();
-          await new Promise((resolve) => setTimeout(resolve, 2e3));
-          const metrics = await collectPerformanceMetrics(page, wallClockMs);
-          const metricsText = metrics ? formatMetrics(metrics) : "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              const absVideoPath = path3.resolve(videoPath);
-              console.error(`[navigate] video written to absolute path: ${absVideoPath}`);
-              try {
-                const stat = await fs2.stat(absVideoPath);
-                console.error(`[navigate] video file verified, size: ${stat.size} bytes`);
-              } catch (statErr) {
-                console.error(`[navigate] WARNING: video file NOT found after save: ${statErr}`);
-              }
-              logVideoSaved(server2, "navigate", absVideoPath);
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${absVideoPath}${metricsText}`
-                  }
-                ]
-              };
-            } catch (stopError) {
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Warning: Recording failed: ${String(stopError)}${metricsText}`
-                  }
-                ]
-              };
+        const navStart = Date.now();
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        const wallClockMs = Date.now() - navStart;
+        const title = await page.title();
+        const metrics = await collectPerformanceMetrics(page, wallClockMs);
+        const metricsText = metrics ? formatMetrics(metrics) : "";
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`
             }
-          } else {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Successfully navigated to ${url}. Page title is "${title}". (Recording was disabled due to initialization error)${metricsText}`
-                }
-              ]
-            };
-          }
-        } catch (navError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-            });
-          }
-          throw navError;
-        }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -343,16 +141,11 @@ var init_navigate = __esm({
   "src/tools/navigate.ts"() {
     "use strict";
     init_stagehand();
-    init_log();
-    init_recorder();
-    init_paths();
   }
 });
 
 // src/tools/extract.ts
 import { z as z2 } from "zod";
-import fs3 from "fs/promises";
-import path4 from "path";
 function jsonSchemaToZod(schema) {
   const shape = {};
   for (const [key, typeStr] of Object.entries(schema)) {
@@ -403,55 +196,21 @@ function registerExtractTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = getLogsDir();
-        console.error(`[extract] logsDir resolved to: ${logsDir}`);
-        await fs3.mkdir(logsDir, { recursive: true });
-        const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path4.join(logsDir, `${timestamp}-extract.mp4`);
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[extract] recorder.start() failed:`, recorderError);
+        let result;
+        if (schema && Object.keys(schema).length > 0) {
+          const zodSchema = jsonSchemaToZod(schema);
+          result = await sh.extract(instruction, zodSchema);
+        } else {
+          result = await sh.extract(instruction);
         }
-        try {
-          let result;
-          if (schema && Object.keys(schema).length > 0) {
-            const zodSchema = jsonSchemaToZod(schema);
-            result = await sh.extract(instruction, zodSchema);
-          } else {
-            result = await sh.extract(instruction);
-          }
-          await new Promise((resolve) => setTimeout(resolve, 2e3));
-          let extraInfo = "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              extraInfo = `
-Recording saved to ${videoPath}`;
-              logVideoSaved(server2, "extract", videoPath);
-            } catch (stopError) {
-              extraInfo = `
-Warning: Recording failed: ${String(stopError)}`;
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
             }
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2) + extraInfo
-              }
-            ]
-          };
-        } catch (actionError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-            });
-          }
-          throw actionError;
-        }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -470,16 +229,11 @@ var init_extract = __esm({
   "src/tools/extract.ts"() {
     "use strict";
     init_stagehand();
-    init_log();
-    init_recorder();
-    init_paths();
   }
 });
 
 // src/tools/observe.ts
 import { z as z3 } from "zod";
-import fs4 from "fs/promises";
-import path5 from "path";
 function registerObserveTool(server2) {
   server2.registerTool(
     "observe",
@@ -498,54 +252,20 @@ function registerObserveTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = getLogsDir();
-        console.error(`[observe] logsDir resolved to: ${logsDir}`);
-        await fs4.mkdir(logsDir, { recursive: true });
-        const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path5.join(logsDir, `${timestamp}-observe.mp4`);
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[observe] recorder.start() failed:`, recorderError);
+        let actions;
+        if (instruction) {
+          actions = await sh.observe(instruction);
+        } else {
+          actions = await sh.observe();
         }
-        try {
-          let actions;
-          if (instruction) {
-            actions = await sh.observe(instruction);
-          } else {
-            actions = await sh.observe();
-          }
-          await new Promise((resolve) => setTimeout(resolve, 2e3));
-          let extraInfo = "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              extraInfo = `
-Recording saved to ${videoPath}`;
-              logVideoSaved(server2, "observe", videoPath);
-            } catch (stopError) {
-              extraInfo = `
-Warning: Recording failed: ${String(stopError)}`;
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(actions, null, 2)
             }
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(actions, null, 2) + extraInfo
-              }
-            ]
-          };
-        } catch (actionError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-            });
-          }
-          throw actionError;
-        }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -564,16 +284,11 @@ var init_observe = __esm({
   "src/tools/observe.ts"() {
     "use strict";
     init_stagehand();
-    init_log();
-    init_recorder();
-    init_paths();
   }
 });
 
 // src/tools/act.ts
 import { z as z4 } from "zod";
-import fs5 from "fs/promises";
-import path6 from "path";
 function registerActTool(server2) {
   server2.registerTool(
     "act",
@@ -592,49 +307,15 @@ function registerActTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = getLogsDir();
-        console.error(`[act] logsDir resolved to: ${logsDir}`);
-        await fs5.mkdir(logsDir, { recursive: true });
-        const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path6.join(logsDir, `${timestamp}-act.mp4`);
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[act] recorder.start() failed:`, recorderError);
-        }
-        try {
-          const result = await sh.act(instruction);
-          await new Promise((resolve) => setTimeout(resolve, 2e3));
-          let extraInfo = "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              extraInfo = `
-Recording saved to ${videoPath}`;
-              logVideoSaved(server2, "act", videoPath);
-            } catch (stopError) {
-              extraInfo = `
-Warning: Recording failed: ${String(stopError)}`;
+        const result = await sh.act(instruction);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
             }
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2) + extraInfo
-              }
-            ]
-          };
-        } catch (actionError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-            });
-          }
-          throw actionError;
-        }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -653,15 +334,10 @@ var init_act = __esm({
   "src/tools/act.ts"() {
     "use strict";
     init_stagehand();
-    init_log();
-    init_recorder();
-    init_paths();
   }
 });
 
 // src/tools/get_url.ts
-import fs6 from "fs/promises";
-import path7 from "path";
 function registerGetUrlTool(server2) {
   server2.registerTool(
     "get_url",
@@ -676,49 +352,15 @@ function registerGetUrlTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const logsDir = getLogsDir();
-        console.error(`[get_url] logsDir resolved to: ${logsDir}`);
-        await fs6.mkdir(logsDir, { recursive: true });
-        const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-        const videoPath = path7.join(logsDir, `${timestamp}-get_url.mp4`);
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[get_url] recorder.start() failed:`, recorderError);
-        }
-        try {
-          const url = page.url();
-          await new Promise((resolve) => setTimeout(resolve, 2e3));
-          let extraInfo = "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              extraInfo = `
-Recording saved to ${videoPath}`;
-              logVideoSaved(server2, "get_url", videoPath);
-            } catch (stopError) {
-              extraInfo = `
-Warning: Recording failed: ${String(stopError)}`;
+        const url = page.url();
+        return {
+          content: [
+            {
+              type: "text",
+              text: url
             }
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: url + extraInfo
-              }
-            ]
-          };
-        } catch (actionError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-            });
-          }
-          throw actionError;
-        }
+          ]
+        };
       } catch (error) {
         return {
           content: [
@@ -736,10 +378,7 @@ Warning: Recording failed: ${String(stopError)}`;
 var init_get_url = __esm({
   "src/tools/get_url.ts"() {
     "use strict";
-    init_log();
     init_stagehand();
-    init_recorder();
-    init_paths();
   }
 });
 

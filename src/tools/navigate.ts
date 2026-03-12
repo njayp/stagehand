@@ -2,11 +2,6 @@ import { z } from "zod";
 import { Page } from "@browserbasehq/stagehand";
 import { getStagehand } from "../stagehand";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { logVideoSaved } from "../utils/log.js";
-import { ScreenRecorder } from "../utils/recorder.js";
-import fs from "fs/promises";
-import path from "path";
-import { getLogsDir } from "../utils/paths.js";
 
 interface PerformanceMetrics {
   wallClockMs: number;
@@ -99,96 +94,22 @@ export function registerNavigateTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        // Prepare recording directory
-        const logsDir = getLogsDir();
-        const resolvedLogsDir = path.resolve(logsDir);
-        console.error(`[navigate] logsDir=${logsDir} resolved=${resolvedLogsDir} cwd=${process.cwd()}`);
-        await fs.mkdir(resolvedLogsDir, { recursive: true });
-        // Write a marker file to prove the directory is writable
-        const markerPath = path.join(resolvedLogsDir, "marker.txt");
-        await fs.writeFile(markerPath, `written at ${new Date().toISOString()} from cwd=${process.cwd()}`);
-        console.error(`[navigate] marker written to ${markerPath}`);
+        const navStart = Date.now();
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        const wallClockMs = Date.now() - navStart;
+        const title = await page.title();
 
-        // Generate timestamped filename
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const videoPath = path.join(resolvedLogsDir, `${timestamp}-navigate.mp4`);
+        const metrics = await collectPerformanceMetrics(page, wallClockMs);
+        const metricsText = metrics ? formatMetrics(metrics) : "";
 
-        // Start recording
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[navigate] recorder.start() failed:`, recorderError);
-        }
-
-        try {
-          // Navigate to URL with wall clock timing
-          const navStart = Date.now();
-          await page.goto(url, { waitUntil: "domcontentloaded" });
-          const wallClockMs = Date.now() - navStart;
-          const title = await page.title();
-
-          // Wait a moment to ensure frames are captured (screencast is async)
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-
-          // Collect performance metrics
-          const metrics = await collectPerformanceMetrics(page, wallClockMs);
-          const metricsText = metrics ? formatMetrics(metrics) : "";
-
-          // Stop and save recording
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              const absVideoPath = path.resolve(videoPath);
-              console.error(`[navigate] video written to absolute path: ${absVideoPath}`);
-              // Verify the file actually exists
-              try {
-                const stat = await fs.stat(absVideoPath);
-                console.error(`[navigate] video file verified, size: ${stat.size} bytes`);
-              } catch (statErr) {
-                console.error(`[navigate] WARNING: video file NOT found after save: ${statErr}`);
-              }
-              logVideoSaved(server, "navigate", absVideoPath);
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Recording saved to ${absVideoPath}${metricsText}`,
-                  },
-                ],
-              };
-            } catch (stopError) {
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: `Successfully navigated to ${url}. Page title is "${title}". Warning: Recording failed: ${String(stopError)}${metricsText}`,
-                  },
-                ],
-              };
-            }
-          } else {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Successfully navigated to ${url}. Page title is "${title}". (Recording was disabled due to initialization error)${metricsText}`,
-                },
-              ],
-            };
-          }
-        } catch (navError) {
-          // Attempt to save partial recording if recording was started
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {
-              // Ignore errors when trying to save partial recording
-            });
-          }
-          throw navError;
-        }
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`,
+            },
+          ],
+        };
       } catch (error) {
         return {
           content: [

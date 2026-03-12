@@ -1,10 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { logVideoSaved } from "../utils/log.js";
 import { getStagehand } from "../stagehand";
-import { ScreenRecorder } from "../utils/recorder.js";
-import fs from "fs/promises";
-import path from "path";
-import { getLogsDir } from "../utils/paths.js";
 
 export function registerGetUrlTool(server: McpServer) {
   server.registerTool(
@@ -23,53 +18,16 @@ export function registerGetUrlTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const logsDir = getLogsDir();
-        console.error(`[get_url] logsDir resolved to: ${logsDir}`);
-        await fs.mkdir(logsDir, { recursive: true });
+        const url = page.url();
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const videoPath = path.join(logsDir, `${timestamp}-get_url.mp4`);
-
-        const recorder = new ScreenRecorder(page, sh);
-        let recordingStarted = false;
-
-        try {
-          await recorder.start();
-          recordingStarted = true;
-        } catch (recorderError) {
-          console.error(`[get_url] recorder.start() failed:`, recorderError);
-        }
-
-        try {
-          const url = page.url();
-
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-
-          let extraInfo = "";
-          if (recordingStarted) {
-            try {
-              await recorder.stop(videoPath);
-              extraInfo = `\nRecording saved to ${videoPath}`;
-              logVideoSaved(server, "get_url", videoPath);
-            } catch (stopError) {
-              extraInfo = `\nWarning: Recording failed: ${String(stopError)}`;
-            }
-          }
-
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: url + extraInfo,
-              },
-            ],
-          };
-        } catch (actionError) {
-          if (recordingStarted) {
-            await recorder.stop(videoPath).catch(() => {});
-          }
-          throw actionError;
-        }
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: url,
+            },
+          ],
+        };
       } catch (error) {
         return {
           content: [

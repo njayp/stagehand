@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import path from "path";
-import fs from "fs/promises";
 
 describe("MCP tools integration", () => {
   let client: Client;
@@ -25,7 +24,7 @@ describe("MCP tools integration", () => {
     await client.close();
   });
 
-  it("navigate to example.com and verify video recording", async () => {
+  it("navigate to example.com", async () => {
     const result = await client.callTool({
       name: "navigate",
       arguments: { url: "https://example.com" },
@@ -39,14 +38,6 @@ describe("MCP tools integration", () => {
 
     const text = content[0].text;
     expect(text).toContain("Example Domain");
-
-    // Verify video recording
-    const match = text.match(/Recording saved to (.+\.mp4)/);
-    expect(match).not.toBeNull();
-
-    const videoPath = match![1];
-    const stat = await fs.stat(videoPath);
-    expect(stat.size).toBeGreaterThan(0);
 
     // Verify performance metrics
     expect(text).toContain("Performance Metrics:");

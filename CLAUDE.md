@@ -1,4 +1,4 @@
-UPDATE THIS FILE (CLAUDE.MD) AS NEEDED. KEEP THIS FILE SUCCINCT.
+UPDATE THIS FILE (CLAUDE.MD) AND README.md AS NEEDED
 
 # Stagehand MCP Server
 
@@ -10,10 +10,9 @@ Docs: https://github.com/browserbase/stagehand
 
 The server implements the following MCP tools:
 
-- **`navigate`**: Navigates the active browser page to a specified URL, records the navigation as video, and returns the page's `<title>` along with performance metrics.
+- **`navigate`**: Navigates the active browser page to a specified URL and returns the page's `<title>` along with performance metrics.
   - **Inputs**: `url` (string, required) - The URL to navigate to (e.g. `https://google.com`).
-  - **Outputs**: Navigation success message with page title, path to the recorded video, and performance metrics (wall clock duration, TTFB, DOM Interactive, DOM Content Loaded, Load Event End, Total Load Time, DOM Parsing Time).
-  - **Recording**: Each navigation is automatically recorded using Chrome DevTools Protocol screencast and saved as an MP4 video in `.stagehand/logs/navigate-<timestamp>.mp4`.
+  - **Outputs**: Navigation success message with page title and performance metrics (wall clock duration, TTFB, DOM Interactive, DOM Content Loaded, Load Event End, Total Load Time, DOM Parsing Time).
 
 - **`extract`**: Extracts data from the currently loaded page using natural language instructions.
   - **Inputs**:
@@ -41,7 +40,6 @@ The server implements the following MCP tools:
 
 - **Server Protocol**: [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) - specifically utilizing the modern `McpServer` class.
 - **Browser Automation**: `Stagehand` (v3).
-- **Video Recording**: Chrome DevTools Protocol screencast with FFmpeg encoding.
 - **Build Tooling**: `tsup`.
 - **Validation**: `zod`.
 
@@ -63,18 +61,6 @@ The server implements the following MCP tools:
    npm test
    ```
    This runs unit tests (`src/stagehand.test.ts`) and integration tests (`src/server.test.ts`) which connect to the built MCP server and exercise all tools.
-
-## Video Recordings
-
-All navigation actions are automatically recorded and saved as MP4 videos in the `.stagehand/logs/` directory. Each recording:
-
-- Captures the entire page load and rendering process
-- Uses Chrome DevTools Protocol's screencast feature to capture frames
-- Encodes frames to H.264 MP4 format using FFmpeg
-- Saves with timestamped filename: `navigate-<ISO8601-timestamp>.mp4`
-- Can be played in any standard video player (VLC, QuickTime, browser, etc.)
-
-**Note**: The `.stagehand/logs/` directory is automatically created on first use and is excluded from git via `.gitignore`.
 
 ### Connecting with an MCP Client (e.g., Claude Desktop, Cursor)
 
