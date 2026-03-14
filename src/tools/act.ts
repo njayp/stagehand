@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStagehand } from "../stagehand.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { withRecording } from "../utils/withRecording.js";
 
 export function registerActTool(server: McpServer) {
   server.registerTool(
@@ -27,13 +28,18 @@ export function registerActTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const result = await sh.act(instruction);
+        const { result, recordingPath } = await withRecording(
+          "act",
+          page,
+          sh,
+          async () => sh.act(instruction),
+        );
 
         return {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify({ ...result, recordingPath }, null, 2),
             },
           ],
         };

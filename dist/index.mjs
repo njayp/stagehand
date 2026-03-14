@@ -54,6 +54,164 @@ var init_stagehand = __esm({
   }
 });
 
+// src/utils/recorder.ts
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegStatic from "ffmpeg-static";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+var ScreenRecorder;
+var init_recorder = __esm({
+  "src/utils/recorder.ts"() {
+    "use strict";
+    if (ffmpegStatic) {
+      ffmpeg.setFfmpegPath(ffmpegStatic);
+    }
+    ScreenRecorder = class {
+      constructor(page, stagehand2) {
+        this.page = page;
+        this.stagehand = stagehand2;
+      }
+      frames = [];
+      frameHandler = null;
+      session = null;
+      // Will store the CDP session for event unregistration
+      MAX_FRAMES = 1e3;
+      recordingStartTime = 0;
+      async start() {
+        this.frames = [];
+        this.recordingStartTime = Date.now();
+        await this.page.sendCDP("Page.enable");
+        const mainFrame = this.page.mainFrame();
+        this.session = mainFrame.session;
+        this.frameHandler = (params) => {
+          if (this.frames.length < this.MAX_FRAMES) {
+            this.frames.push({
+              data: params.data,
+              sessionId: params.sessionId,
+              timestamp: Date.now() - this.recordingStartTime
+            });
+          }
+          this.page.sendCDP("Page.screencastFrameAck", { sessionId: params.sessionId }).catch((err) => {
+          });
+        };
+        this.session.on("Page.screencastFrame", this.frameHandler);
+        await this.page.sendCDP("Page.startScreencast", {
+          format: "jpeg",
+          quality: 80,
+          maxWidth: 1280,
+          maxHeight: 720,
+          everyNthFrame: 1
+        });
+      }
+      async waitForMinFrames(min, timeoutMs) {
+        const deadline = Date.now() + timeoutMs;
+        while (this.frames.length < min && Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
+      async stop(outputPath) {
+        console.error(
+          `[recorder] stop() called, frames captured: ${this.frames.length}, outputPath: ${outputPath}`
+        );
+        try {
+          await this.page.sendCDP("Page.stopScreencast");
+        } catch (error) {
+          console.error(`[recorder] Page.stopScreencast error:`, error);
+        }
+        if (this.frameHandler && this.session) {
+          this.session.off("Page.screencastFrame", this.frameHandler);
+          this.frameHandler = null;
+          this.session = null;
+        }
+        if (this.frames.length < 2) {
+          console.error(
+            `[recorder] Only ${this.frames.length} frame(s) captured, skipping encoding`
+          );
+          return;
+        }
+        console.error(
+          `[recorder] encoding ${this.frames.length} frames to ${outputPath}`
+        );
+        await this.encodeToMp4(this.frames, outputPath);
+        console.error(`[recorder] encoding complete: ${outputPath}`);
+      }
+      async encodeToMp4(frames, outputPath) {
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "stagehand-frames-"));
+        try {
+          await Promise.all(
+            frames.map((frame, i) => {
+              const framePath = path.join(tempDir, `frame-${i.toString().padStart(5, "0")}.jpg`);
+              return fs.writeFile(framePath, Buffer.from(frame.data, "base64"));
+            })
+          );
+          const totalDuration = frames[frames.length - 1].timestamp / 1e3;
+          const fps = Math.max(1, Math.min(30, frames.length / totalDuration));
+          await new Promise((resolve, reject) => {
+            const command = ffmpeg().input(path.join(tempDir, "frame-%05d.jpg")).inputFPS(fps).videoFilters([
+              "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+              // Ensure even dimensions for H.264
+            ]).outputOptions([
+              "-c:v libx264",
+              // H.264 codec
+              "-pix_fmt yuv420p",
+              // Pixel format for compatibility
+              "-movflags +faststart"
+              // Enable fast start for web playback
+            ]).output(outputPath).on("end", () => {
+              resolve();
+            }).on("error", (err, stdout, stderr) => {
+              reject(new Error(`FFmpeg encoding failed: ${err.message}`));
+            });
+            command.run();
+          });
+        } finally {
+          try {
+            await fs.rm(tempDir, { recursive: true, force: true });
+          } catch (cleanupError) {
+          }
+        }
+      }
+    };
+  }
+});
+
+// src/utils/withRecording.ts
+import fs2 from "fs/promises";
+import path2 from "path";
+async function withRecording(toolName, page, stagehand2, callback) {
+  const recordingsDir = path2.resolve("./recordings");
+  await fs2.mkdir(recordingsDir, { recursive: true });
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+  const outputPath = path2.join(recordingsDir, `${toolName}-${timestamp}.mp4`);
+  const recorder = new ScreenRecorder(page, stagehand2);
+  try {
+    await recorder.start();
+  } catch (err) {
+    console.error(`[withRecording] Failed to start recording:`, err);
+    const result2 = await callback();
+    return { result: result2, recordingPath: "" };
+  }
+  let result;
+  try {
+    result = await callback();
+  } catch (err) {
+    recorder.stop(outputPath).catch(() => {
+    });
+    throw err;
+  }
+  recorder.waitForMinFrames(10, 5e3).then(() => recorder.stop(outputPath)).catch(
+    (err) => console.error(`[withRecording] Background encoding failed:`, err)
+  );
+  return { result, recordingPath: outputPath };
+}
+var init_withRecording = __esm({
+  "src/utils/withRecording.ts"() {
+    "use strict";
+    init_recorder();
+  }
+});
+
 // src/tools/navigate.ts
 import { z } from "zod";
 async function collectPerformanceMetrics(page, wallClockMs) {
@@ -119,17 +277,27 @@ function registerNavigateTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const navStart = Date.now();
-        await page.goto(url, { waitUntil: "domcontentloaded" });
-        const wallClockMs = Date.now() - navStart;
-        const title = await page.title();
-        const metrics = await collectPerformanceMetrics(page, wallClockMs);
-        const metricsText = metrics ? formatMetrics(metrics) : "";
+        const { result: navResult, recordingPath } = await withRecording(
+          "navigate",
+          page,
+          sh,
+          async () => {
+            const navStart = Date.now();
+            await page.goto(url, { waitUntil: "domcontentloaded" });
+            const wallClockMs = Date.now() - navStart;
+            const title = await page.title();
+            const metrics = await collectPerformanceMetrics(page, wallClockMs);
+            const metricsText = metrics ? formatMetrics(metrics) : "";
+            return `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`;
+          }
+        );
+        const recordingText = recordingPath ? `
+Recording: ${recordingPath}` : "";
         return {
           content: [
             {
               type: "text",
-              text: `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`
+              text: `${navResult}${recordingText}`
             }
           ]
         };
@@ -151,6 +319,7 @@ var init_navigate = __esm({
   "src/tools/navigate.ts"() {
     "use strict";
     init_stagehand();
+    init_withRecording();
   }
 });
 
@@ -317,12 +486,17 @@ function registerActTool(server2) {
         if (!page) {
           throw new Error("No active page found in Stagehand context");
         }
-        const result = await sh.act(instruction);
+        const { result, recordingPath } = await withRecording(
+          "act",
+          page,
+          sh,
+          async () => sh.act(instruction)
+        );
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2)
+              text: JSON.stringify({ ...result, recordingPath }, null, 2)
             }
           ]
         };
@@ -344,6 +518,7 @@ var init_act = __esm({
   "src/tools/act.ts"() {
     "use strict";
     init_stagehand();
+    init_withRecording();
   }
 });
 

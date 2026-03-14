@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Page } from "@browserbasehq/stagehand";
 import { getStagehand } from "../stagehand";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { withRecording } from "../utils/withRecording.js";
 
 interface PerformanceMetrics {
   wallClockMs: number;
@@ -94,19 +95,32 @@ export function registerNavigateTool(server: McpServer) {
           throw new Error("No active page found in Stagehand context");
         }
 
-        const navStart = Date.now();
-        await page.goto(url, { waitUntil: "domcontentloaded" });
-        const wallClockMs = Date.now() - navStart;
-        const title = await page.title();
+        const { result: navResult, recordingPath } = await withRecording(
+          "navigate",
+          page,
+          sh,
+          async () => {
+            const navStart = Date.now();
+            await page.goto(url, { waitUntil: "domcontentloaded" });
+            const wallClockMs = Date.now() - navStart;
+            const title = await page.title();
 
-        const metrics = await collectPerformanceMetrics(page, wallClockMs);
-        const metricsText = metrics ? formatMetrics(metrics) : "";
+            const metrics = await collectPerformanceMetrics(page, wallClockMs);
+            const metricsText = metrics ? formatMetrics(metrics) : "";
+
+            return `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`;
+          },
+        );
+
+        const recordingText = recordingPath
+          ? `\nRecording: ${recordingPath}`
+          : "";
 
         return {
           content: [
             {
               type: "text",
-              text: `Successfully navigated to ${url}. Page title is "${title}".${metricsText}`,
+              text: `${navResult}${recordingText}`,
             },
           ],
         };
