@@ -192,11 +192,10 @@ var ScreenRecorder = class {
 // src/utils/withRecording.ts
 var import_promises3 = __toESM(require("fs/promises"));
 var import_path2 = __toESM(require("path"));
-var SCRIPT_DIR = import_path2.default.dirname(process.argv[1] || ".");
-var PROJECT_ROOT = import_path2.default.resolve(SCRIPT_DIR, "..");
+var RECORDINGS_BASE = process.cwd();
 async function withRecording(toolName, page, stagehand2, callback) {
-  const recordingsDir = import_path2.default.join(PROJECT_ROOT, "recordings");
-  console.error(`[withRecording] cwd=${process.cwd()}, projectRoot=${PROJECT_ROOT}, recordingsDir=${recordingsDir}`);
+  const recordingsDir = import_path2.default.join(RECORDINGS_BASE, "recordings");
+  console.error(`[withRecording] recordingsDir=${recordingsDir}`);
   await import_promises3.default.mkdir(recordingsDir, { recursive: true });
   const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
   const outputPath = import_path2.default.join(recordingsDir, `${toolName}-${timestamp}.mp4`);
@@ -566,26 +565,10 @@ registerActTool(server);
 registerGetUrlTool(server);
 
 // index.ts
-var import_fs = require("fs");
-var import_path3 = __toESM(require("path"));
 async function main() {
-  const breadcrumbPaths = [
-    "/tmp/stagehand-mcp-breadcrumb.txt",
-    import_path3.default.join(import_path3.default.dirname(process.argv[1] || "."), "..", "breadcrumb.txt"),
-    import_path3.default.join(process.cwd(), "breadcrumb.txt")
-  ];
-  const msg = `started at ${(/* @__PURE__ */ new Date()).toISOString()}, pid=${process.pid}, argv=${JSON.stringify(process.argv)}, cwd=${process.cwd()}
-`;
-  for (const p of breadcrumbPaths) {
-    try {
-      (0, import_fs.writeFileSync)(p, msg, { flag: "a" });
-    } catch {
-    }
-  }
   const transport = new import_stdio.StdioServerTransport();
   await server.connect(transport);
   console.error("Stagehand MCP server running on stdio");
-  console.error(`[stagehand] process.cwd() = ${process.cwd()}`);
 }
 main().catch((error) => {
   console.error("Server error:", error);

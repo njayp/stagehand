@@ -3,9 +3,8 @@ import { ScreenRecorder } from "./recorder";
 import fs from "fs/promises";
 import path from "path";
 
-// Resolve project root from the script path (dist/index.js -> project root)
-const SCRIPT_DIR = path.dirname(process.argv[1] || ".");
-const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..");
+// Use cwd for recordings (works with npx); fall back to script parent dir
+const RECORDINGS_BASE = process.cwd();
 
 export async function withRecording<T>(
   toolName: string,
@@ -13,8 +12,8 @@ export async function withRecording<T>(
   stagehand: Stagehand,
   callback: () => Promise<T>,
 ): Promise<{ result: T; recordingPath: string }> {
-  const recordingsDir = path.join(PROJECT_ROOT, "recordings");
-  console.error(`[withRecording] cwd=${process.cwd()}, projectRoot=${PROJECT_ROOT}, recordingsDir=${recordingsDir}`);
+  const recordingsDir = path.join(RECORDINGS_BASE, "recordings");
+  console.error(`[withRecording] recordingsDir=${recordingsDir}`);
   await fs.mkdir(recordingsDir, { recursive: true });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
