@@ -6,6 +6,9 @@ mcpServers:
   stagehand:
     command: "node"
     args: ["/Users/nickpowell/repos/stagehand/dist/index.js"]
+    cwd: "/Users/nickpowell/repos/stagehand"
+    env:
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
 tools:
   - mcp__stagehand__*
 ---
