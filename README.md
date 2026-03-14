@@ -1,34 +1,42 @@
 # Stagehand MCP Server
 
-This package provides a Model Context Protocol (MCP) server for [Stagehand v3](https://github.com/browserbasehq/stagehand), enabling AI agents to control a browser and interact with web pages.
+A [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) agent that gives Claude browser automation capabilities using [Stagehand v3](https://github.com/browserbase/stagehand). It runs an MCP server that can navigate pages, click elements, extract data, and observe interactive elements.
 
-## Features
+## Setup
 
-- **Browser Automation**: Navigate to URLs, click elements, fill forms, and more.
-- **Information Extraction**: Extract text, links, and structured data from pages.
-- **Context-Aware Tools**: Tools that understand the current page state.
-- **Persistent Browser Profiles**: Optionally launch the browser with a pre-configured profile (e.g. logged-in session) by placing a `.browser-use/profile/` directory in the project root.
+1. **Prerequisites**: [Node.js](https://nodejs.org/) (which includes `npx`).
 
-## Prerequisites
-
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-2. **Install Chromium for Playwright** (required — Stagehand uses Playwright to drive a local browser):
+2. **Install Playwright Chromium** (Stagehand uses Playwright to drive a local browser):
    ```bash
    npx playwright install chromium
    ```
-3. **Build the server**:
+
+3. **Set your API key** (required for `extract`, `observe`, and `act` tools):
    ```bash
-   npm run build
+   export ANTHROPIC_API_KEY=your-key-here
    ```
 
-## Environment Variables
+4. **Copy the agent file** from this repo into your project:
+   ```bash
+   mkdir -p .claude/agents
+   cp path/to/stagehand/.claude/agents/browser-use.md .claude/agents/
+   ```
 
-| Variable            | Required | Description                                                        |
-| ------------------- | -------- | ------------------------------------------------------------------ |
-| `ANTHROPIC_API_KEY` | Yes      | API key for Claude (used by `extract`, `observe`, and `act` tools) |
+Claude Code runs the MCP server automatically via `npx` — no additional install or build step needed.
+
+## Usage
+
+Once the agent file is in place, Claude Code detects it and makes a `browser-use` agent available. Claude will automatically launch it when browser automation is needed.
+
+## Available Tools
+
+| Tool | Description |
+| --- | --- |
+| `navigate` | Navigate to a URL. Returns page title and performance metrics. |
+| `extract` | Extract structured data from the current page using natural language. |
+| `observe` | List available actions and interactive elements on the current page. |
+| `act` | Perform an action on the current page (click, type, etc.) using natural language. |
+| `get_url` | Get the current page URL. |
 
 ## Using a Browser Profile
 
@@ -38,11 +46,14 @@ To browse sites that require authentication, create a profile with your session 
    ```bash
    mkdir -p .browser-use/profile
    ```
-2. **Launch Chromium with that directory** (uses the Playwright-managed Chromium installed during [Prerequisites](#prerequisites)):
+2. **Launch Chromium with that directory** (uses the Playwright-managed Chromium):
    ```bash
-   "$(ls ~/Library/Caches/ms-playwright/chromium-*/chrome-mac-arm64/Google\ Chrome\ for\ Testing.app/Contents/MacOS/Google\ Chrome\ for\ Testing)" --user-data-dir=.browser-use/profile
+   npx playwright install chromium
+   "$(ls ~/Library/Caches/ms-playwright/chromium-*/chrome-mac-arm64/Google\ Chrome\ for\ Testing.app/Contents/MacOS/Google\ Chrome\ for\ Testing)" --user-data-dir=.browser-use/profile --use-mock-keychain
    ```
 3. **Log in** to the site in the browser window that opens. Complete any auth flow, 2FA, etc.
 4. **Close the browser.** Your cookies and session are now saved in `.browser-use/profile/`.
+
+> **Important**: The `--use-mock-keychain` flag is required on macOS. Playwright's Chromium encrypts cookies using a mock keychain with a deterministic key. Without this flag, cookies are encrypted with the macOS system Keychain, and the server's browser won't be able to decrypt them.
 
 At startup, the server copies `.browser-use/profile/` to a temp location and launches the browser with it, preserving your cookies and sessions. The original `.browser-use/profile/` directory is never modified.

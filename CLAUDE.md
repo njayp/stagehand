@@ -6,6 +6,10 @@ This application is a Model Context Protocol (MCP) Server that exposes local bro
 
 Docs: https://github.com/browserbase/stagehand
 
+## Usage
+
+Users add the agent to their project by copying `.claude/agents/browser-use.md` into their own repo's `.claude/agents/` directory. Claude Code detects the agent automatically and runs the MCP server via `npx` — no install or build step required.
+
 ## Available Tools
 
 The server implements the following MCP tools:
@@ -51,6 +55,8 @@ The server implements the following MCP tools:
 
 The server automatically detects a `.browser-use/profile/` directory in its working directory (`process.cwd()`) at startup. If found, it copies the directory to a temp location and launches the browser with it, preserving cookies, sessions, and other browser state. The original `.browser-use/profile/` directory is never modified.
 
+**Important (macOS)**: The profile must be created using Playwright's Chromium with the `--use-mock-keychain` flag. Playwright encrypts cookies using a mock keychain with a deterministic key. Profiles created without this flag use the macOS system Keychain, and the server's browser won't be able to decrypt the cookies.
+
 ## How to Test and Run
 
 ### Running Locally (CLI)
@@ -69,20 +75,3 @@ The server automatically detects a `.browser-use/profile/` directory in its work
    npm test
    ```
    This runs unit tests (`src/stagehand.test.ts`) and integration tests (`src/server.test.ts`) which connect to the built MCP server and exercise all tools.
-
-### Connecting with an MCP Client (e.g., Claude Desktop, Cursor)
-
-To test end-to-end inside of an AI environment, configure the client's connection settings to execute the built `dist/index.js` payload via Node.
-
-Example configuration:
-
-```json
-{
-  "mcpServers": {
-    "stagehand": {
-      "command": "node",
-      "args": ["/absolute/path/to/stagehand/dist/index.js"]
-    }
-  }
-}
-```
