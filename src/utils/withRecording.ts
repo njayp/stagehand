@@ -12,12 +12,12 @@ export async function withRecording<T>(
   stagehand: Stagehand,
   callback: () => Promise<T>,
 ): Promise<{ result: T; recordingPath: string }> {
-  const recordingsDir = path.join(RECORDINGS_BASE, "recordings");
+  const recordingsDir = path.join(RECORDINGS_BASE, ".browser-use", "recordings");
   console.error(`[withRecording] recordingsDir=${recordingsDir}`);
   await fs.mkdir(recordingsDir, { recursive: true });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outputPath = path.join(recordingsDir, `${toolName}-${timestamp}.mp4`);
+  const outputPath = path.join(recordingsDir, `${timestamp}-${toolName}.mp4`);
   console.error(`[withRecording] outputPath=${outputPath}`);
 
   const recorder = new ScreenRecorder(page, stagehand);
@@ -53,9 +53,13 @@ export async function withRecording<T>(
   // Verify the file actually exists on disk
   try {
     const stat = await fs.stat(outputPath);
-    console.error(`[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`);
+    console.error(
+      `[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`,
+    );
   } catch {
-    console.error(`[withRecording] WARNING: file does NOT exist at ${outputPath}`);
+    console.error(
+      `[withRecording] WARNING: file does NOT exist at ${outputPath}`,
+    );
   }
 
   return { result, recordingPath: outputPath };

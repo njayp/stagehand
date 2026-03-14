@@ -46,7 +46,10 @@ The server implements the following MCP tools:
 ## Environment Variables
 
 - `ANTHROPIC_API_KEY` (required): API key for Claude, used by `extract`, `observe`, and `act` tools.
-- `BROWSER_PROFILE_DIR` (optional): Path to a Chromium user data directory. When set, the server copies this directory to a temp location at startup and launches the browser with it, preserving cookies, sessions, and other browser state. The original directory is never modified.
+
+## Browser Profile
+
+The server automatically detects a `.browser-use/profile/` directory in its working directory (`process.cwd()`) at startup. If found, it copies the directory to a temp location and launches the browser with it, preserving cookies, sessions, and other browser state. The original `.browser-use/profile/` directory is never modified.
 
 ## How to Test and Run
 
@@ -78,10 +81,7 @@ Example configuration:
   "mcpServers": {
     "stagehand": {
       "command": "node",
-      "args": ["/absolute/path/to/stagehand/dist/index.js"],
-      "env": {
-        "BROWSER_PROFILE_DIR": "/path/to/chrome-profile"
-      }
+      "args": ["/absolute/path/to/stagehand/dist/index.js"]
     }
   }
 }

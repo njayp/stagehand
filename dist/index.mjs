@@ -11,6 +11,7 @@ var __commonJS = (cb, mod) => function __require() {
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
 import { mkdtemp, cp } from "fs/promises";
+import { existsSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 async function getStagehand() {
@@ -30,9 +31,9 @@ var init_stagehand = __esm({
     stagehand = null;
     initializationPromise = null;
     initStagehand = async () => {
-      const profileDir = process.env.BROWSER_PROFILE_DIR;
+      const profileDir = join(process.cwd(), ".browser-use", "profile");
       let userDataDir;
-      if (profileDir) {
+      if (existsSync(profileDir)) {
         userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
         await cp(profileDir, userDataDir, { recursive: true });
       }
@@ -180,11 +181,11 @@ var init_recorder = __esm({
 import fs2 from "fs/promises";
 import path2 from "path";
 async function withRecording(toolName, page, stagehand2, callback) {
-  const recordingsDir = path2.join(RECORDINGS_BASE, "recordings");
+  const recordingsDir = path2.join(RECORDINGS_BASE, ".browser-use", "recordings");
   console.error(`[withRecording] recordingsDir=${recordingsDir}`);
   await fs2.mkdir(recordingsDir, { recursive: true });
   const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const outputPath = path2.join(recordingsDir, `${toolName}-${timestamp}.mp4`);
+  const outputPath = path2.join(recordingsDir, `${timestamp}-${toolName}.mp4`);
   console.error(`[withRecording] outputPath=${outputPath}`);
   const recorder = new ScreenRecorder(page, stagehand2);
   try {
@@ -213,9 +214,13 @@ async function withRecording(toolName, page, stagehand2, callback) {
   }
   try {
     const stat = await fs2.stat(outputPath);
-    console.error(`[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`);
+    console.error(
+      `[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`
+    );
   } catch {
-    console.error(`[withRecording] WARNING: file does NOT exist at ${outputPath}`);
+    console.error(
+      `[withRecording] WARNING: file does NOT exist at ${outputPath}`
+    );
   }
   return { result, recordingPath: outputPath };
 }

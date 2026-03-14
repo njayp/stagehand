@@ -2,20 +2,30 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import path from "path";
-import { mkdtemp, writeFile, readdir, readFile, rm } from "node:fs/promises";
+import {
+  mkdtemp,
+  writeFile,
+  readdir,
+  readFile,
+  rm,
+  mkdir,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 
-describe("BROWSER_PROFILE_DIR support", () => {
+describe(".browser-use/profile directory support", () => {
   let client: Client;
-  let profileDir: string;
+  let cwdDir: string;
+  const profileSubdir = path.join(".browser-use", "profile");
   const markerFileName = "cookies.json";
   const markerContent = '{"marker": true}';
 
   beforeAll(async () => {
-    // Create a temp "golden" profile directory with a marker file
-    profileDir = await mkdtemp(path.join(tmpdir(), "stagehand-test-profile-"));
+    // Create a temp directory to act as the server's cwd
+    cwdDir = await mkdtemp(path.join(tmpdir(), "stagehand-test-cwd-"));
+    // Create .browser-use/profile/ inside it with a marker file
+    await mkdir(path.join(cwdDir, profileSubdir), { recursive: true });
     await writeFile(
-      path.join(profileDir, markerFileName),
+      path.join(cwdDir, profileSubdir, markerFileName),
       markerContent,
       "utf-8",
     );
@@ -23,7 +33,7 @@ describe("BROWSER_PROFILE_DIR support", () => {
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: [path.resolve(__dirname, "../dist/index.js")],
-      env: { ...process.env, BROWSER_PROFILE_DIR: profileDir },
+      cwd: cwdDir,
     });
 
     client = new Client(
@@ -36,7 +46,7 @@ describe("BROWSER_PROFILE_DIR support", () => {
 
   afterAll(async () => {
     await client.close();
-    await rm(profileDir, { recursive: true, force: true });
+    await rm(cwdDir, { recursive: true, force: true });
   });
 
   it("navigates successfully with a profile directory", async () => {
@@ -52,11 +62,11 @@ describe("BROWSER_PROFILE_DIR support", () => {
   });
 
   it("does not modify the original profile directory", async () => {
-    const files = await readdir(profileDir);
+    const files = await readdir(path.join(cwdDir, profileSubdir));
     expect(files).toContain(markerFileName);
 
     const content = await readFile(
-      path.join(profileDir, markerFileName),
+      path.join(cwdDir, profileSubdir, markerFileName),
       "utf-8",
     );
     expect(content).toBe(markerContent);

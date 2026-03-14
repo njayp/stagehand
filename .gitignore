@@ -138,5 +138,5 @@ out
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Stagehand logs files
-recordings/
+# Stagehand browser-use data (recordings, profile, etc.)
+.browser-use/

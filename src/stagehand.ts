@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
 import { mkdtemp, cp } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -24,10 +25,10 @@ export async function getStagehand(): Promise<Stagehand> {
 }
 
 const initStagehand = async (): Promise<Stagehand> => {
-  const profileDir = process.env.BROWSER_PROFILE_DIR;
+  const profileDir = join(process.cwd(), ".browser-use", "profile");
   let userDataDir: string | undefined;
 
-  if (profileDir) {
+  if (existsSync(profileDir)) {
     userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
     await cp(profileDir, userDataDir, { recursive: true });
   }
