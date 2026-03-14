@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "stagehand": {
+      "command": "node",
+      "args": ["/Users/nickpowell/repos/stagehand/dist/index.js"],
+      "cwd": "/Users/nickpowell/repos/stagehand"
+    }
+  }
+}
