@@ -1,7 +1,7 @@
 import { Page, Stagehand } from "@browserbasehq/stagehand";
 import { ScreenRecorder } from "./recorder";
-import fs from "fs/promises";
-import path from "path";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 // Use cwd for recordings (works with npx); fall back to script parent dir
 const RECORDINGS_BASE = process.cwd();
@@ -12,12 +12,12 @@ export async function withRecording<T>(
   stagehand: Stagehand,
   callback: () => Promise<T>,
 ): Promise<{ result: T; recordingPath: string }> {
-  const recordingsDir = path.join(RECORDINGS_BASE, ".browser-use", "recordings");
+  const recordingsDir = join(RECORDINGS_BASE, ".browser-use", "recordings");
   console.error(`[withRecording] recordingsDir=${recordingsDir}`);
-  await fs.mkdir(recordingsDir, { recursive: true });
+  await mkdir(recordingsDir, { recursive: true });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outputPath = path.join(recordingsDir, `${timestamp}-${toolName}.mp4`);
+  const outputPath = join(recordingsDir, `${timestamp}-${toolName}.mp4`);
   console.error(`[withRecording] outputPath=${outputPath}`);
 
   const recorder = new ScreenRecorder(page, stagehand);
@@ -48,18 +48,6 @@ export async function withRecording<T>(
     console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
-  }
-
-  // Verify the file actually exists on disk
-  try {
-    const stat = await fs.stat(outputPath);
-    console.error(
-      `[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`,
-    );
-  } catch {
-    console.error(
-      `[withRecording] WARNING: file does NOT exist at ${outputPath}`,
-    );
   }
 
   return { result, recordingPath: outputPath };
