@@ -43,6 +43,11 @@ The server implements the following MCP tools:
 - **Build Tooling**: `tsup`.
 - **Validation**: `zod`.
 
+## Environment Variables
+
+- `ANTHROPIC_API_KEY` (required): API key for Claude, used by `extract`, `observe`, and `act` tools.
+- `BROWSER_PROFILE_DIR` (optional): Path to a Chromium user data directory. When set, the server copies this directory to a temp location at startup and launches the browser with it, preserving cookies, sessions, and other browser state. The original directory is never modified.
+
 ## How to Test and Run
 
 ### Running Locally (CLI)
@@ -74,7 +79,9 @@ Example configuration:
     "stagehand": {
       "command": "node",
       "args": ["/absolute/path/to/stagehand/dist/index.js"],
-      "env": {}
+      "env": {
+        "BROWSER_PROFILE_DIR": "/path/to/chrome-profile"
+      }
     }
   }
 }

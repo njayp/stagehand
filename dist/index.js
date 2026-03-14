@@ -13,6 +13,9 @@ var import_zod = require("zod");
 // src/stagehand.ts
 var import_config = require("dotenv/config");
 var import_stagehand = require("@browserbasehq/stagehand");
+var import_promises = require("fs/promises");
+var import_node_os = require("os");
+var import_node_path = require("path");
 var stagehand = null;
 var initializationPromise = null;
 async function getStagehand() {
@@ -26,10 +29,17 @@ async function getStagehand() {
   return initializationPromise;
 }
 var initStagehand = async () => {
+  const profileDir = process.env.BROWSER_PROFILE_DIR;
+  let userDataDir;
+  if (profileDir) {
+    userDataDir = await (0, import_promises.mkdtemp)((0, import_node_path.join)((0, import_node_os.tmpdir)(), "stagehand-profile-"));
+    await (0, import_promises.cp)(profileDir, userDataDir, { recursive: true });
+  }
   const instance = new import_stagehand.Stagehand({
     env: "LOCAL",
     localBrowserLaunchOptions: {
-      headless: true
+      headless: true,
+      ...userDataDir && { userDataDir }
     },
     model: {
       modelName: "anthropic/claude-haiku-4-5",
@@ -349,10 +359,7 @@ function registerGetUrlTool(server2) {
 }
 
 // src/server.ts
-var server = new import_mcp.McpServer(
-  { name: "stagehand", version: "0.0.1" },
-  { capabilities: { logging: {} } }
-);
+var server = new import_mcp.McpServer({ name: "stagehand", version: "0.0.1" });
 registerNavigateTool(server);
 registerExtractTool(server);
 registerObserveTool(server);

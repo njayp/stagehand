@@ -1,5 +1,8 @@
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
+import { mkdtemp, cp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 let stagehand: Stagehand | null = null;
 let initializationPromise: Promise<Stagehand> | null = null;
@@ -21,10 +24,19 @@ export async function getStagehand(): Promise<Stagehand> {
 }
 
 const initStagehand = async (): Promise<Stagehand> => {
+  const profileDir = process.env.BROWSER_PROFILE_DIR;
+  let userDataDir: string | undefined;
+
+  if (profileDir) {
+    userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
+    await cp(profileDir, userDataDir, { recursive: true });
+  }
+
   const instance = new Stagehand({
     env: "LOCAL",
     localBrowserLaunchOptions: {
       headless: true,
+      ...(userDataDir && { userDataDir }),
     },
     model: {
       modelName: "anthropic/claude-haiku-4-5",
@@ -36,6 +48,5 @@ const initStagehand = async (): Promise<Stagehand> => {
 
   // Only set stagehand after successful initialization
   stagehand = instance;
-
   return instance;
 };

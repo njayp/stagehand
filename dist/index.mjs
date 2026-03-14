@@ -10,6 +10,9 @@ var __commonJS = (cb, mod) => function __require() {
 // src/stagehand.ts
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
+import { mkdtemp, cp } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 async function getStagehand() {
   if (stagehand) {
     return stagehand;
@@ -27,10 +30,17 @@ var init_stagehand = __esm({
     stagehand = null;
     initializationPromise = null;
     initStagehand = async () => {
+      const profileDir = process.env.BROWSER_PROFILE_DIR;
+      let userDataDir;
+      if (profileDir) {
+        userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
+        await cp(profileDir, userDataDir, { recursive: true });
+      }
       const instance = new Stagehand({
         env: "LOCAL",
         localBrowserLaunchOptions: {
-          headless: true
+          headless: true,
+          ...userDataDir && { userDataDir }
         },
         model: {
           modelName: "anthropic/claude-haiku-4-5",
@@ -393,10 +403,7 @@ var init_server = __esm({
     init_observe();
     init_act();
     init_get_url();
-    server = new McpServer(
-      { name: "stagehand", version: "0.0.1" },
-      { capabilities: { logging: {} } }
-    );
+    server = new McpServer({ name: "stagehand", version: "0.0.1" });
     registerNavigateTool(server);
     registerExtractTool(server);
     registerObserveTool(server);
