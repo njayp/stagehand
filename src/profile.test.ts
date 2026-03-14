@@ -14,6 +14,8 @@ import { tmpdir } from "node:os";
 
 describe(".browser-use/profile directory support", () => {
   let client: Client;
+  let transport: StdioClientTransport;
+  let stderrOutput = "";
   let cwdDir: string;
   const profileSubdir = path.join(".browser-use", "profile");
   const markerFileName = "cookies.json";
@@ -30,10 +32,15 @@ describe(".browser-use/profile directory support", () => {
       "utf-8",
     );
 
-    const transport = new StdioClientTransport({
+    transport = new StdioClientTransport({
       command: process.execPath,
       args: [path.resolve(__dirname, "../dist/index.js")],
       cwd: cwdDir,
+      stderr: "pipe",
+    });
+
+    (transport.stderr as NodeJS.ReadableStream)?.on("data", (chunk: Buffer) => {
+      stderrOutput += chunk.toString();
     });
 
     client = new Client(
@@ -73,5 +80,10 @@ describe(".browser-use/profile directory support", () => {
 
     // The original profile should only have the marker file we created
     expect(files).toEqual([markerFileName]);
+  });
+
+  it("logs that the profile directory was detected and copied", () => {
+    expect(stderrOutput).toContain("Browser profile detected");
+    expect(stderrOutput).toContain(path.join(cwdDir, ".browser-use", "profile"));
   });
 });

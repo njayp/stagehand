@@ -57,6 +57,7 @@ var initStagehand = async () => {
   if ((0, import_node_fs.existsSync)(profileDir)) {
     userDataDir = await (0, import_promises.mkdtemp)((0, import_node_path.join)((0, import_node_os.tmpdir)(), "stagehand-profile-"));
     await (0, import_promises.cp)(profileDir, userDataDir, { recursive: true });
+    console.error(`[stagehand] Browser profile detected at ${profileDir}, copied to ${userDataDir}`);
   }
   const instance = new import_stagehand.Stagehand({
     env: "LOCAL",
@@ -191,15 +192,15 @@ var ScreenRecorder = class {
 };
 
 // src/utils/withRecording.ts
-var import_promises3 = __toESM(require("fs/promises"));
-var import_path2 = __toESM(require("path"));
+var import_promises3 = require("fs/promises");
+var import_node_path2 = require("path");
 var RECORDINGS_BASE = process.cwd();
 async function withRecording(toolName, page, stagehand2, callback) {
-  const recordingsDir = import_path2.default.join(RECORDINGS_BASE, ".browser-use", "recordings");
+  const recordingsDir = (0, import_node_path2.join)(RECORDINGS_BASE, ".browser-use", "recordings");
   console.error(`[withRecording] recordingsDir=${recordingsDir}`);
-  await import_promises3.default.mkdir(recordingsDir, { recursive: true });
+  await (0, import_promises3.mkdir)(recordingsDir, { recursive: true });
   const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const outputPath = import_path2.default.join(recordingsDir, `${timestamp}-${toolName}.mp4`);
+  const outputPath = (0, import_node_path2.join)(recordingsDir, `${timestamp}-${toolName}.mp4`);
   console.error(`[withRecording] outputPath=${outputPath}`);
   const recorder = new ScreenRecorder(page, stagehand2);
   try {
@@ -225,16 +226,6 @@ async function withRecording(toolName, page, stagehand2, callback) {
     console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
-  }
-  try {
-    const stat = await import_promises3.default.stat(outputPath);
-    console.error(
-      `[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`
-    );
-  } catch {
-    console.error(
-      `[withRecording] WARNING: file does NOT exist at ${outputPath}`
-    );
   }
   return { result, recordingPath: outputPath };
 }

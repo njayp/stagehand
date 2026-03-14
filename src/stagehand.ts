@@ -31,6 +31,7 @@ const initStagehand = async (): Promise<Stagehand> => {
   if (existsSync(profileDir)) {
     userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
     await cp(profileDir, userDataDir, { recursive: true });
+    console.error(`[stagehand] Browser profile detected at ${profileDir}, copied to ${userDataDir}`);
   }
 
   const instance = new Stagehand({

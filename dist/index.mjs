@@ -36,6 +36,7 @@ var init_stagehand = __esm({
       if (existsSync(profileDir)) {
         userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
         await cp(profileDir, userDataDir, { recursive: true });
+        console.error(`[stagehand] Browser profile detected at ${profileDir}, copied to ${userDataDir}`);
       }
       const instance = new Stagehand({
         env: "LOCAL",
@@ -178,14 +179,14 @@ var init_recorder = __esm({
 });
 
 // src/utils/withRecording.ts
-import fs2 from "fs/promises";
-import path2 from "path";
+import { mkdir } from "fs/promises";
+import { join as join2 } from "path";
 async function withRecording(toolName, page, stagehand2, callback) {
-  const recordingsDir = path2.join(RECORDINGS_BASE, ".browser-use", "recordings");
+  const recordingsDir = join2(RECORDINGS_BASE, ".browser-use", "recordings");
   console.error(`[withRecording] recordingsDir=${recordingsDir}`);
-  await fs2.mkdir(recordingsDir, { recursive: true });
+  await mkdir(recordingsDir, { recursive: true });
   const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const outputPath = path2.join(recordingsDir, `${timestamp}-${toolName}.mp4`);
+  const outputPath = join2(recordingsDir, `${timestamp}-${toolName}.mp4`);
   console.error(`[withRecording] outputPath=${outputPath}`);
   const recorder = new ScreenRecorder(page, stagehand2);
   try {
@@ -211,16 +212,6 @@ async function withRecording(toolName, page, stagehand2, callback) {
     console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
-  }
-  try {
-    const stat = await fs2.stat(outputPath);
-    console.error(
-      `[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`
-    );
-  } catch {
-    console.error(
-      `[withRecording] WARNING: file does NOT exist at ${outputPath}`
-    );
   }
   return { result, recordingPath: outputPath };
 }
