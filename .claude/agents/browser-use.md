@@ -3,12 +3,12 @@ name: browser-use
 description: Launch a browser automation subagent that can navigate pages, click elements, extract data, and observe interactive elements
 model: sonnet
 mcpServers:
-  - browser-use:
+  - stagehand:
       type: stdio
       command: npx
       args: ["-y", "github:njayp/stagehand"]
 tools:
-  - mcp__browser-use__*
+  - mcp__stagehand__*
 ---
 
 Use the browser-use MCP server to navigate pages, click elements, extract data, and observe interactive elements.

@@ -605,16 +605,10 @@ var init_server = __esm({
 
 // index.ts
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { writeFileSync } from "fs";
 var require_index = __commonJS({
   "index.ts"() {
     init_server();
     async function main() {
-      try {
-        writeFileSync("/tmp/stagehand-mcp-started.txt", `started ${(/* @__PURE__ */ new Date()).toISOString()} pid=${process.pid}
-`, { flag: "a" });
-      } catch {
-      }
       const transport = new StdioServerTransport();
       await server.connect(transport);
       console.error("Stagehand MCP server running on stdio");
