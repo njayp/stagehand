@@ -565,7 +565,13 @@ registerActTool(server);
 registerGetUrlTool(server);
 
 // index.ts
+var import_fs = require("fs");
 async function main() {
+  try {
+    (0, import_fs.writeFileSync)("/tmp/stagehand-mcp-started.txt", `started ${(/* @__PURE__ */ new Date()).toISOString()} pid=${process.pid}
+`, { flag: "a" });
+  } catch {
+  }
   const transport = new import_stdio.StdioServerTransport();
   await server.connect(transport);
   console.error("Stagehand MCP server running on stdio");

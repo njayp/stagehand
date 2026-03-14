@@ -3,9 +3,10 @@ name: browser-use
 description: Launch a browser automation subagent that can navigate pages, click elements, extract data, and observe interactive elements
 model: sonnet
 mcpServers:
-  browser-use:
-    command: "npx"
-    args: ["-y", "github:njayp/stagehand"]
+  - browser-use:
+      type: stdio
+      command: npx
+      args: ["-y", "github:njayp/stagehand"]
 tools:
   - mcp__browser-use__*
 ---
