@@ -56,7 +56,7 @@ var init_stagehand = __esm({
   }
 });
 
-// src/utils/recorder.ts
+// src/recording/recorder.ts
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 import fs from "fs/promises";
@@ -64,7 +64,7 @@ import path from "path";
 import os from "os";
 var ScreenRecorder;
 var init_recorder = __esm({
-  "src/utils/recorder.ts"() {
+  "src/recording/recorder.ts"() {
     "use strict";
     if (ffmpegStatic) {
       ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -178,7 +178,7 @@ var init_recorder = __esm({
   }
 });
 
-// src/utils/withRecording.ts
+// src/recording/withRecording.ts
 import { mkdir } from "fs/promises";
 import { join as join2 } from "path";
 async function withRecording(toolName, page, stagehand2, callback) {
@@ -217,7 +217,7 @@ async function withRecording(toolName, page, stagehand2, callback) {
 }
 var RECORDINGS_BASE;
 var init_withRecording = __esm({
-  "src/utils/withRecording.ts"() {
+  "src/recording/withRecording.ts"() {
     "use strict";
     init_recorder();
     RECORDINGS_BASE = process.cwd();

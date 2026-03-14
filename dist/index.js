@@ -75,7 +75,7 @@ var initStagehand = async () => {
   return instance;
 };
 
-// src/utils/recorder.ts
+// src/recording/recorder.ts
 var import_fluent_ffmpeg = __toESM(require("fluent-ffmpeg"));
 var import_ffmpeg_static = __toESM(require("ffmpeg-static"));
 var import_promises2 = __toESM(require("fs/promises"));
@@ -191,7 +191,7 @@ var ScreenRecorder = class {
   }
 };
 
-// src/utils/withRecording.ts
+// src/recording/withRecording.ts
 var import_promises3 = require("fs/promises");
 var import_node_path2 = require("path");
 var RECORDINGS_BASE = process.cwd();

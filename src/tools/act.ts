@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getStagehand } from "../stagehand.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { withRecording } from "../utils/withRecording.js";
+import { withRecording } from "../recording/withRecording.js";
 
 export function registerActTool(server: McpServer) {
   server.registerTool(

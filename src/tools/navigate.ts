@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Page } from "@browserbasehq/stagehand";
 import { getStagehand } from "../stagehand";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { withRecording } from "../utils/withRecording.js";
+import { withRecording } from "../recording/withRecording.js";
 
 interface PerformanceMetrics {
   wallClockMs: number;
