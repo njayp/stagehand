@@ -180,10 +180,12 @@ var init_recorder = __esm({
 import fs2 from "fs/promises";
 import path2 from "path";
 async function withRecording(toolName, page, stagehand2, callback) {
-  const recordingsDir = path2.resolve("./recordings");
+  const recordingsDir = path2.join(PROJECT_ROOT, "recordings");
+  console.error(`[withRecording] cwd=${process.cwd()}, projectRoot=${PROJECT_ROOT}, recordingsDir=${recordingsDir}`);
   await fs2.mkdir(recordingsDir, { recursive: true });
   const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
   const outputPath = path2.join(recordingsDir, `${toolName}-${timestamp}.mp4`);
+  console.error(`[withRecording] outputPath=${outputPath}`);
   const recorder = new ScreenRecorder(page, stagehand2);
   try {
     await recorder.start();
@@ -201,17 +203,29 @@ async function withRecording(toolName, page, stagehand2, callback) {
     throw err;
   }
   try {
+    console.error(`[withRecording] waiting for frames...`);
     await recorder.waitForMinFrames(10, 5e3);
+    console.error(`[withRecording] frames ready, stopping recorder...`);
     await recorder.stop(outputPath);
+    console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
   }
+  try {
+    const stat = await fs2.stat(outputPath);
+    console.error(`[withRecording] file exists: ${outputPath}, size=${stat.size} bytes`);
+  } catch {
+    console.error(`[withRecording] WARNING: file does NOT exist at ${outputPath}`);
+  }
   return { result, recordingPath: outputPath };
 }
+var SCRIPT_DIR, PROJECT_ROOT;
 var init_withRecording = __esm({
   "src/utils/withRecording.ts"() {
     "use strict";
     init_recorder();
+    SCRIPT_DIR = path2.dirname(process.argv[1] || ".");
+    PROJECT_ROOT = path2.resolve(SCRIPT_DIR, "..");
   }
 });
 
@@ -592,10 +606,25 @@ var init_server = __esm({
 
 // index.ts
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { writeFileSync } from "fs";
+import path3 from "path";
 var require_index = __commonJS({
   "index.ts"() {
     init_server();
     async function main() {
+      const breadcrumbPaths = [
+        "/tmp/stagehand-mcp-breadcrumb.txt",
+        path3.join(path3.dirname(process.argv[1] || "."), "..", "breadcrumb.txt"),
+        path3.join(process.cwd(), "breadcrumb.txt")
+      ];
+      const msg = `started at ${(/* @__PURE__ */ new Date()).toISOString()}, pid=${process.pid}, argv=${JSON.stringify(process.argv)}, cwd=${process.cwd()}
+`;
+      for (const p of breadcrumbPaths) {
+        try {
+          writeFileSync(p, msg, { flag: "a" });
+        } catch {
+        }
+      }
       const transport = new StdioServerTransport();
       await server.connect(transport);
       console.error("Stagehand MCP server running on stdio");
