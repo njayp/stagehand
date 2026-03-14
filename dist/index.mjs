@@ -200,9 +200,12 @@ async function withRecording(toolName, page, stagehand2, callback) {
     });
     throw err;
   }
-  recorder.waitForMinFrames(10, 5e3).then(() => recorder.stop(outputPath)).catch(
-    (err) => console.error(`[withRecording] Background encoding failed:`, err)
-  );
+  try {
+    await recorder.waitForMinFrames(10, 5e3);
+    await recorder.stop(outputPath);
+  } catch (err) {
+    console.error(`[withRecording] Recording encoding failed:`, err);
+  }
   return { result, recordingPath: outputPath };
 }
 var init_withRecording = __esm({

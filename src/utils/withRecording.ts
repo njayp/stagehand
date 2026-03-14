@@ -34,13 +34,13 @@ export async function withRecording<T>(
     throw err;
   }
 
-  // Fire-and-forget: wait for frames, then encode
-  recorder
-    .waitForMinFrames(10, 5000)
-    .then(() => recorder.stop(outputPath))
-    .catch((err) =>
-      console.error(`[withRecording] Background encoding failed:`, err),
-    );
+  // Wait for enough frames, then encode before returning
+  try {
+    await recorder.waitForMinFrames(10, 5000);
+    await recorder.stop(outputPath);
+  } catch (err) {
+    console.error(`[withRecording] Recording encoding failed:`, err);
+  }
 
   return { result, recordingPath: outputPath };
 }
