@@ -27,7 +27,7 @@ export async function withRecording<T>(
   } catch (err) {
     console.error(`[withRecording] Failed to start recording:`, err);
     const result = await callback();
-    return { result, recordingPath: "" };
+    return { result, recordingPath: `[recording start failed: ${err}]` };
   }
 
   let result: T;
@@ -48,6 +48,7 @@ export async function withRecording<T>(
     console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
+    return { result, recordingPath: `[recording encode failed: ${err}]` };
   }
 
   return { result, recordingPath: outputPath };

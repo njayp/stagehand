@@ -5,8 +5,8 @@ model: sonnet
 mcpServers:
   - stagehand:
       type: stdio
-      command: npx
-      args: ["-y", "github:njayp/stagehand"]
+      command: bash
+      args: ["-lc", "npx -y github:njayp/stagehand"]
 tools:
   - mcp__stagehand__*
 ---

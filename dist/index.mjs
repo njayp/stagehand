@@ -194,7 +194,7 @@ async function withRecording(toolName, page, stagehand2, callback) {
   } catch (err) {
     console.error(`[withRecording] Failed to start recording:`, err);
     const result2 = await callback();
-    return { result: result2, recordingPath: "" };
+    return { result: result2, recordingPath: `[recording start failed: ${err}]` };
   }
   let result;
   try {
@@ -212,6 +212,7 @@ async function withRecording(toolName, page, stagehand2, callback) {
     console.error(`[withRecording] recorder stopped`);
   } catch (err) {
     console.error(`[withRecording] Recording encoding failed:`, err);
+    return { result, recordingPath: `[recording encode failed: ${err}]` };
   }
   return { result, recordingPath: outputPath };
 }
@@ -304,12 +305,14 @@ function registerNavigateTool(server2) {
           }
         );
         const recordingText = recordingPath ? `
-Recording: ${recordingPath}` : "";
+Recording: ${recordingPath}` : "\nRecording: [none]";
+        const cwdText = `
+cwd: ${process.cwd()}`;
         return {
           content: [
             {
               type: "text",
-              text: `${navResult}${recordingText}`
+              text: `${navResult}${recordingText}${cwdText}`
             }
           ]
         };

@@ -114,13 +114,14 @@ export function registerNavigateTool(server: McpServer) {
 
         const recordingText = recordingPath
           ? `\nRecording: ${recordingPath}`
-          : "";
+          : "\nRecording: [none]";
+        const cwdText = `\ncwd: ${process.cwd()}`;
 
         return {
           content: [
             {
               type: "text",
-              text: `${navResult}${recordingText}`,
+              text: `${navResult}${recordingText}${cwdText}`,
             },
           ],
         };
