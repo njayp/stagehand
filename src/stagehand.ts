@@ -41,7 +41,7 @@ const initStagehand = async (): Promise<Stagehand> => {
       ...(userDataDir && { userDataDir }),
     },
     model: {
-      modelName: "anthropic/claude-haiku-4-5",
+      modelName: "anthropic/claude-haiku-4-5-20251001",
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
   });
