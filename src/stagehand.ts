@@ -31,7 +31,9 @@ const initStagehand = async (): Promise<Stagehand> => {
   if (existsSync(profileDir)) {
     userDataDir = await mkdtemp(join(tmpdir(), "stagehand-profile-"));
     await cp(profileDir, userDataDir, { recursive: true });
-    console.error(`[stagehand] Browser profile detected at ${profileDir}, copied to ${userDataDir}`);
+    console.error(
+      `[stagehand] Browser profile detected at ${profileDir}, copied to ${userDataDir}`,
+    );
   }
 
   const instance = new Stagehand({
@@ -41,7 +43,7 @@ const initStagehand = async (): Promise<Stagehand> => {
       ...(userDataDir && { userDataDir }),
     },
     model: {
-      modelName: "anthropic/claude-haiku-4-5-20251001",
+      modelName: "anthropic/claude-haiku-4-5",
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
   });
